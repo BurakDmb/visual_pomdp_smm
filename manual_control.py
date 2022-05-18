@@ -1,7 +1,9 @@
 from gym_minigrid.window import Window
-from gym_minigrid.envs.empty import EmptyRandomEnv5x5
+# from gym_minigrid.envs.empty import EmptyRandomEnv5x5
+# from gym_minigrid.envs.empty import EmptyEnv
 from gym_minigrid.wrappers import RGBImgObsWrapper
 import os
+import gym
 
 
 def redraw(obs):
@@ -52,7 +54,8 @@ def step(action):
 tile_size = 32
 window = Window("gym_minigrid - MiniGrid-Empty-Random-5x5-v0")
 window.reg_key_handler(key_handler)
-env = EmptyRandomEnv5x5()
+# env = EmptyRandomEnv5x5()
+env = gym.make('MiniGrid-Empty-Random-6x6-v0')
 env = RGBImgObsWrapper(env)
 obs = env.reset()
 redraw(obs)
