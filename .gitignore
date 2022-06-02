@@ -3,3 +3,6 @@ dataset_images/**
 manual_images/**
 data/**
 logs/**
+save/**
+**.pyc
+**.egg-info/**

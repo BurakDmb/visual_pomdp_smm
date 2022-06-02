@@ -14,6 +14,15 @@ plt.rcParams['figure.dpi'] = 200
 torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+latent_dims = 10
+input_dims = 48
+hidden_size = 200
+batch_size = 64
+epochs = 30
+train_set_ratio = 0.8
+in_channels = 3
+learning_rate = 1e-3
+
 
 # Source: https://avandekleut.github.io/vae/
 class Encoder(nn.Module):
@@ -41,14 +50,6 @@ class Encoder(nn.Module):
         self.linear1 = nn.Linear(h_out1*h_out1*hidden_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, latent_dims)
 
-    # def __init__(self, input_dims, latent_dims, hidden_size):
-    #     super(Encoder, self).__init__()
-    #     self.input_dims = input_dims
-
-    # old fully connected structure
-    #     self.linear1 = nn.Linear((input_dims*input_dims), hidden_size)
-    #     self.linear2 = nn.Linear(hidden_size, latent_dims)
-
     def forward(self, x):
         x = self.conv1(x)
         x = torch.flatten(x, start_dim=1)
@@ -67,17 +68,9 @@ class Decoder(nn.Module):
         dilation = 1
         stride = 2
 
-        # h_out1 = int(np.floor(((
-        #     input_dims + 2*padding - dilation * (kernel_size-1) - 1)
-        #     / stride) + 1))
-
         self.decoder_h_in = (
             stride*(input_dims-1) + 1 - 2*padding
             + dilation * (kernel_size - 1))
-
-        # old fully connected structure
-        # self.linear1 = nn.Linear(latent_dims, hidden_size)
-        # self.linear2 = nn.Linear(hidden_size, (input_dims*input_dims))
 
         self.linear1 = nn.Linear(latent_dims, hidden_size)
         self.linear2 = nn.Linear(
@@ -109,8 +102,8 @@ class Autoencoder(nn.Module):
             input_dims, latent_dims, hidden_size, in_channels)
 
     def forward(self, x):
-        z = self.encoder(x)
-        return self.decoder(z)
+        self.z = self.encoder(x)
+        return self.decoder(self.z)
 
 
 class VariationalEncoder(nn.Module):
@@ -139,10 +132,6 @@ class VariationalEncoder(nn.Module):
         self.linear2 = nn.Linear(hidden_size, latent_dims)
         self.linear3 = nn.Linear(hidden_size, latent_dims)
 
-        # self.linear1 = nn.Linear((input_dims*input_dims), hidden_size)
-        # self.linear2 = nn.Linear(hidden_size, latent_dims)
-        # self.linear3 = nn.Linear(hidden_size, latent_dims)
-
         self.N = torch.distributions.Normal(0, 1)
         self.N.loc = self.N.loc.cuda()  # hack to get sampling on the GPU
         self.N.scale = self.N.scale.cuda()
@@ -168,18 +157,17 @@ class VariationalAutoencoder(nn.Module):
             input_dims, latent_dims, hidden_size, in_channels)
 
     def forward(self, x):
-        z = self.encoder(x)
-        return self.decoder(z)
+        self.z = self.encoder(x)
+        return self.decoder(self.z)
 
 
 class MinigridDataset(torch.utils.data.Dataset):
     def __init__(
-            self, data_path, split, image_size, train_set_ratio, **kwargs):
-        self.data_dir = Path(data_path) / "Minigrid"
+            self, data_path, split, image_size, train_set_ratio,
+            use_cache=False, **kwargs):
 
+        self.data_dir = Path(data_path) / "Minigrid"
         self.transforms = torchvision.transforms.Compose([
-            # transforms.RandomHorizontalFlip(),
-            # transforms.CenterCrop(148),
             torchvision.transforms.Resize(image_size),
             torchvision.transforms.ToTensor(), ])
 
@@ -190,13 +178,26 @@ class MinigridDataset(torch.utils.data.Dataset):
             :int(len(imgs) * train_set_ratio)] if split == "train" else imgs[
             int(len(imgs) * train_set_ratio):]
 
+        self.cached_data = []
+        self.use_cache = use_cache
+        if self.use_cache:
+            # caching for speedup
+            for i in range(len(self.imgs)):
+                img = torchvision.datasets.folder.default_loader(self.imgs[i])
+                if self.transforms is not None:
+                    img = self.transforms(img)
+                self.cached_data.append(img)
+            self.cached_data = torch.stack(self.cached_data)
+
     def __len__(self):
         return len(self.imgs)
 
     def __getitem__(self, idx):
-        img = torchvision.datasets.folder.default_loader(self.imgs[idx])
-
-        if self.transforms is not None:
-            img = self.transforms(img)
+        if not self.use_cache:
+            img = torchvision.datasets.folder.default_loader(self.imgs[idx])
+            if self.transforms is not None:
+                img = self.transforms(img)
+        else:
+            img = self.cached_data[idx]
 
         return img, 0.0  # dummy data_y to prevent breaking

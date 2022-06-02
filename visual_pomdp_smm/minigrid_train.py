@@ -1,21 +1,27 @@
+import os
 from torch.utils.tensorboard import SummaryWriter
 import torch
+
 from tqdm.auto import tqdm
 from datetime import datetime
-import matplotlib.pyplot as plt
 
-from minigrid_utils import Autoencoder, VariationalAutoencoder, MinigridDataset
+from visual_pomdp_smm.minigrid_utils import (
+    Autoencoder, VariationalAutoencoder, MinigridDataset, latent_dims,
+    input_dims, hidden_size, batch_size,
+    epochs, train_set_ratio, in_channels, learning_rate
+    )
 
-
-plt.rcParams['figure.dpi'] = 200
 torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+save_folder_name = "save"
+if not os.path.exists(save_folder_name):
+    os.makedirs(save_folder_name)
 
 
 def train_ae(
         autoencoder, train_dataset, test_dataset,
         epochs=20, log_name="AE"):
-    opt = torch.optim.AdamW(autoencoder.parameters())
+    opt = torch.optim.AdamW(autoencoder.parameters(), lr=learning_rate)
     filename_date = str(datetime.utcnow().strftime('%H_%M_%S_%f')[:-2])
 
     writer = SummaryWriter(
@@ -53,7 +59,7 @@ def train_ae(
             "AvgLossPerEpoch/test", total_test_loss/len(test_dataset), epoch)
         writer.flush()
     torch.save(
-        autoencoder, "save/" + log_name + "_" +
+        autoencoder, save_folder_name + "/" + log_name + "_" +
         filename_date + ".torch")
     return autoencoder
 
@@ -61,7 +67,7 @@ def train_ae(
 def train_vae(
         autoencoder, train_dataset, test_dataset,
         epochs=20, log_name="VAE"):
-    opt = torch.optim.AdamW(autoencoder.parameters())
+    opt = torch.optim.AdamW(autoencoder.parameters(), lr=learning_rate)
     filename_date = str(datetime.utcnow().strftime('%H_%M_%S_%f')[:-2])
 
     writer = SummaryWriter(
@@ -100,24 +106,19 @@ def train_vae(
             "AvgLossPerEpoch/test", total_test_loss/len(test_dataset), epoch)
         writer.flush()
     torch.save(
-        autoencoder, "save/" + log_name + "_" +
+        autoencoder, save_folder_name + "/" + log_name + "_" +
         filename_date + ".torch")
     return autoencoder
 
 
-def test_minigrid_ae():
-    latent_dims = 30
-    input_dims = 48
-    hidden_size = 128
-    batch_size = 512
-    epochs = 300
-    train_set_ratio = 0.8
-    in_channels = 3
+def main_minigrid_ae():
 
     train_data = MinigridDataset(
-        "data/", "train", image_size=48, train_set_ratio=train_set_ratio)
+        "data/", "train", image_size=input_dims,
+        train_set_ratio=train_set_ratio, use_cache=False)
     test_data = MinigridDataset(
-        "data/", "test", image_size=48, train_set_ratio=train_set_ratio)
+        "data/", "test", image_size=input_dims,
+        train_set_ratio=train_set_ratio, use_cache=False)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=batch_size, shuffle=True,
@@ -134,19 +135,14 @@ def test_minigrid_ae():
         epochs=epochs, log_name="minigrid_AE")
 
 
-def test_minigrid_vae():
-    latent_dims = 30
-    input_dims = 48
-    hidden_size = 128
-    batch_size = 512
-    epochs = 300
-    train_set_ratio = 0.8
-    in_channels = 3
+def main_minigrid_vae():
 
     train_data = MinigridDataset(
-        "data/", "train", image_size=48, train_set_ratio=train_set_ratio)
+        "data/", "train", image_size=input_dims,
+        train_set_ratio=train_set_ratio)
     test_data = MinigridDataset(
-        "data/", "test", image_size=48, train_set_ratio=train_set_ratio)
+        "data/", "test", image_size=input_dims,
+        train_set_ratio=train_set_ratio)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=batch_size, shuffle=True,
@@ -164,5 +160,5 @@ def test_minigrid_vae():
 
 
 if __name__ == "__main__":
-    test_minigrid_ae()
-    test_minigrid_vae()
+    main_minigrid_ae()
+    main_minigrid_vae()
