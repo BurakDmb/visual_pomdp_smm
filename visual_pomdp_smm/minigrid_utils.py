@@ -16,13 +16,20 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 latent_dims = 3
 input_dims = 48
-hidden_size = 200
-batch_size = 64
+hidden_size = 256
+batch_size = 512
 epochs = 50
 train_set_ratio = 0.8
 in_channels = 3
-learning_rate = 1e-3
-maximum_gradient = 100
+learning_rate = 1e-2
+maximum_gradient = 1000
+
+kernel_size = 3
+padding = 3
+dilation = 1
+conv_hidden_size = 16
+conv1_stride = 4
+maxpool_stride = 1
 
 
 # Source: https://avandekleut.github.io/vae/
@@ -31,28 +38,34 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.input_dims = input_dims
 
-        kernel_size = 3
-        padding = 0
-        dilation = 1
-        stride = 2
-
+        # First Conv Layer
         h_out1 = int(np.floor(((
             input_dims + 2*padding - dilation * (kernel_size-1) - 1)
-            / stride) + 1))
+            / conv1_stride) + 1))
 
         self.conv1 = nn.Conv2d(
             in_channels=in_channels,
-            out_channels=hidden_size,
+            out_channels=conv_hidden_size,
             kernel_size=kernel_size,
-            stride=stride,
+            stride=conv1_stride,
             padding=padding,
             dilation=dilation)
+        self.relu1 = nn.ReLU()
 
-        self.linear1 = nn.Linear(h_out1*h_out1*hidden_size, hidden_size)
+        self.maxpool1 = nn.MaxPool2d(
+            kernel_size=kernel_size, stride=maxpool_stride)
+        h_out2 = int(np.floor(((
+            h_out1 - dilation * (kernel_size-1) - 1)
+            / maxpool_stride) + 1))
+
+        # Linear Layers
+        self.linear1 = nn.Linear(h_out2*h_out2*conv_hidden_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, latent_dims)
 
     def forward(self, x):
         x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.maxpool1(x)
         x = torch.flatten(x, start_dim=1)
         x = F.relu(self.linear1(x))
         return self.linear2(x)
@@ -64,24 +77,19 @@ class Decoder(nn.Module):
         self.input_dims = input_dims
         self.hidden_size = hidden_size
 
-        kernel_size = 3
-        padding = 0
-        dilation = 1
-        stride = 2
-
         self.decoder_h_in = (
-            stride*(input_dims-1) + 1 - 2*padding
+            conv1_stride*(input_dims-1) + 1 - 2*padding
             + dilation * (kernel_size - 1))
 
         self.linear1 = nn.Linear(latent_dims, hidden_size)
         self.linear2 = nn.Linear(
-            hidden_size, self.decoder_h_in*self.decoder_h_in*hidden_size)
+            hidden_size, self.decoder_h_in*self.decoder_h_in*conv_hidden_size)
 
         self.conv1 = nn.Conv2d(
-            in_channels=hidden_size,
+            in_channels=conv_hidden_size,
             out_channels=in_channels,
             kernel_size=kernel_size,
-            stride=stride,
+            stride=conv1_stride,
             padding=padding,
             dilation=dilation)
 
@@ -89,7 +97,7 @@ class Decoder(nn.Module):
         z = F.relu(self.linear1(z))
         z = torch.sigmoid(self.linear2(z))
         z = z.reshape((
-            -1, self.hidden_size,
+            -1, conv_hidden_size,
             self.decoder_h_in, self.decoder_h_in))
         return self.conv1(z)
 
@@ -101,6 +109,7 @@ class Autoencoder(nn.Module):
             input_dims, latent_dims, hidden_size, in_channels)
         self.decoder = Decoder(
             input_dims, latent_dims, hidden_size, in_channels)
+        self.z = torch.empty((batch_size, latent_dims))
 
     def forward(self, x):
         self.z = self.encoder(x)
@@ -112,24 +121,27 @@ class VariationalEncoder(nn.Module):
         super(VariationalEncoder, self).__init__()
         self.input_dims = input_dims
 
-        kernel_size = 3
-        padding = 0
-        dilation = 1
-        stride = 2
-
+        # First Conv Layer
         h_out1 = int(np.floor(((
             input_dims + 2*padding - dilation * (kernel_size-1) - 1)
-            / stride) + 1))
+            / conv1_stride) + 1))
 
         self.conv1 = nn.Conv2d(
             in_channels=in_channels,
-            out_channels=hidden_size,
+            out_channels=conv_hidden_size,
             kernel_size=kernel_size,
-            stride=stride,
+            stride=conv1_stride,
             padding=padding,
             dilation=dilation)
+        self.relu1 = nn.ReLU()
 
-        self.linear1 = nn.Linear(h_out1*h_out1*hidden_size, hidden_size)
+        self.maxpool1 = nn.MaxPool2d(
+            kernel_size=kernel_size, stride=maxpool_stride)
+        h_out2 = int(np.floor(((
+            h_out1 - dilation * (kernel_size-1) - 1)
+            / maxpool_stride) + 1))
+
+        self.linear1 = nn.Linear(h_out2*h_out2*conv_hidden_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, latent_dims)
         self.linear3 = nn.Linear(hidden_size, latent_dims)
 
@@ -140,6 +152,8 @@ class VariationalEncoder(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.maxpool1(x)
         x = torch.flatten(x, start_dim=1)
         x = F.relu(self.linear1(x))
         mu = self.linear2(x)
@@ -156,10 +170,16 @@ class VariationalAutoencoder(nn.Module):
             input_dims, latent_dims, hidden_size, in_channels)
         self.decoder = Decoder(
             input_dims, latent_dims, hidden_size, in_channels)
+        self.z = torch.empty((batch_size, latent_dims))
 
     def forward(self, x):
         self.z = self.encoder(x)
         return self.decoder(self.z)
+
+
+class MinigridDatasetParallel(nn.DataParallel):
+    def __getattr__(self, name):
+        return getattr(self.module, name)
 
 
 class MinigridDataset(torch.utils.data.Dataset):

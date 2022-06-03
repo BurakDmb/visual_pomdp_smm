@@ -1,13 +1,14 @@
 import os
 from torch.utils.tensorboard import SummaryWriter
 import torch
-import torch.nn as nn
+# import torch.nn as nn
 
 from tqdm.auto import tqdm
 from datetime import datetime
 
 from visual_pomdp_smm.minigrid_utils import (
-    Autoencoder, VariationalAutoencoder, MinigridDataset, latent_dims,
+    Autoencoder, MinigridDatasetParallel, VariationalAutoencoder,
+    MinigridDataset, latent_dims,
     input_dims, hidden_size, batch_size,
     epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
     )
@@ -129,15 +130,15 @@ def main_minigrid_ae():
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=batch_size, shuffle=True,
-        num_workers=1, pin_memory=True)
+        num_workers=4, pin_memory=True)
     test_dataset = torch.utils.data.DataLoader(
         test_data, batch_size=batch_size, shuffle=True,
-        num_workers=1, pin_memory=True)
+        num_workers=4, pin_memory=True)
 
     autoencoder = Autoencoder(
         input_dims, latent_dims,
         hidden_size, in_channels)
-    autoencoder = nn.DataParallel(autoencoder).to(device)
+    autoencoder = MinigridDatasetParallel(autoencoder).to(device)
     autoencoder = train_ae(
         autoencoder, train_dataset, test_dataset,
         epochs=epochs, log_name="minigrid_AE")
@@ -147,23 +148,23 @@ def main_minigrid_vae():
 
     train_data = MinigridDataset(
         "data/", "train", image_size=input_dims,
-        train_set_ratio=train_set_ratio, use_cache=False)
+        train_set_ratio=train_set_ratio, use_cache=True)
     test_data = MinigridDataset(
         "data/", "test", image_size=input_dims,
-        train_set_ratio=train_set_ratio, use_cache=False)
+        train_set_ratio=train_set_ratio, use_cache=True)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=batch_size, shuffle=True,
-        num_workers=1, pin_memory=True)
+        num_workers=4, pin_memory=True)
     test_dataset = torch.utils.data.DataLoader(
         test_data, batch_size=batch_size, shuffle=True,
-        num_workers=1, pin_memory=True)
+        num_workers=4, pin_memory=True)
 
     vae = VariationalAutoencoder(
         input_dims, latent_dims,
         hidden_size, in_channels)
 
-    vae = nn.DataParallel(vae).to(device)
+    vae = MinigridDatasetParallel(vae).to(device)
     vae = train_vae(
         vae, train_dataset, test_dataset,
         epochs=epochs, log_name="minigrid_VAE")
