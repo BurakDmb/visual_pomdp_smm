@@ -14,14 +14,15 @@ plt.rcParams['figure.dpi'] = 200
 torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-latent_dims = 10
+latent_dims = 3
 input_dims = 48
 hidden_size = 200
 batch_size = 64
-epochs = 30
+epochs = 50
 train_set_ratio = 0.8
 in_channels = 3
 learning_rate = 1e-3
+maximum_gradient = 100
 
 
 # Source: https://avandekleut.github.io/vae/

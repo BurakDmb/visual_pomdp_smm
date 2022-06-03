@@ -1,6 +1,7 @@
 import os
 from torch.utils.tensorboard import SummaryWriter
 import torch
+import torch.nn as nn
 
 from tqdm.auto import tqdm
 from datetime import datetime
@@ -8,7 +9,7 @@ from datetime import datetime
 from visual_pomdp_smm.minigrid_utils import (
     Autoencoder, VariationalAutoencoder, MinigridDataset, latent_dims,
     input_dims, hidden_size, batch_size,
-    epochs, train_set_ratio, in_channels, learning_rate
+    epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
     )
 
 torch.manual_seed(0)
@@ -22,7 +23,8 @@ def train_ae(
         autoencoder, train_dataset, test_dataset,
         epochs=20, log_name="AE"):
     opt = torch.optim.AdamW(autoencoder.parameters(), lr=learning_rate)
-    filename_date = str(datetime.utcnow().strftime('%H_%M_%S_%f')[:-2])
+    filename_date = str(
+        datetime.utcnow().strftime('%Y_%m_%d_%H_%M_%S_%f')[:-2])
 
     writer = SummaryWriter(
         "./logs/"+log_name+"/"+filename_date + "/",
@@ -37,6 +39,8 @@ def train_ae(
             x_hat = autoencoder(x)
             loss = ((x - x_hat)**2).sum()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                autoencoder.parameters(), maximum_gradient)
             opt.step()
             total_training_loss += loss.item()
 
@@ -68,7 +72,8 @@ def train_vae(
         autoencoder, train_dataset, test_dataset,
         epochs=20, log_name="VAE"):
     opt = torch.optim.AdamW(autoencoder.parameters(), lr=learning_rate)
-    filename_date = str(datetime.utcnow().strftime('%H_%M_%S_%f')[:-2])
+    filename_date = str(
+        datetime.utcnow().strftime('%Y_%m_%d_%H_%M_%S_%f')[:-2])
 
     writer = SummaryWriter(
         "./logs/"+log_name+"/"+filename_date + "/",
@@ -83,6 +88,8 @@ def train_vae(
             x_hat = autoencoder(x)
             loss = ((x - x_hat)**2).sum() + autoencoder.encoder.kl
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                autoencoder.parameters(), maximum_gradient)
             opt.step()
             total_training_loss += loss.item()
 
@@ -129,7 +136,8 @@ def main_minigrid_ae():
 
     autoencoder = Autoencoder(
         input_dims, latent_dims,
-        hidden_size, in_channels).to(device)
+        hidden_size, in_channels)
+    autoencoder = nn.DataParallel(autoencoder).to(device)
     autoencoder = train_ae(
         autoencoder, train_dataset, test_dataset,
         epochs=epochs, log_name="minigrid_AE")
@@ -139,10 +147,10 @@ def main_minigrid_vae():
 
     train_data = MinigridDataset(
         "data/", "train", image_size=input_dims,
-        train_set_ratio=train_set_ratio)
+        train_set_ratio=train_set_ratio, use_cache=False)
     test_data = MinigridDataset(
         "data/", "test", image_size=input_dims,
-        train_set_ratio=train_set_ratio)
+        train_set_ratio=train_set_ratio, use_cache=False)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=batch_size, shuffle=True,
@@ -153,7 +161,9 @@ def main_minigrid_vae():
 
     vae = VariationalAutoencoder(
         input_dims, latent_dims,
-        hidden_size, in_channels).to(device)
+        hidden_size, in_channels)
+
+    vae = nn.DataParallel(vae).to(device)
     vae = train_vae(
         vae, train_dataset, test_dataset,
         epochs=epochs, log_name="minigrid_VAE")
@@ -161,4 +171,4 @@ def main_minigrid_vae():
 
 if __name__ == "__main__":
     main_minigrid_ae()
-    main_minigrid_vae()
+    # main_minigrid_vae()

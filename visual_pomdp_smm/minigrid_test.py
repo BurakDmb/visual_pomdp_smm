@@ -30,31 +30,45 @@ def test_model(
 
 
 def test_minigrid_ae(random_visualize=False):
-    prefix_name = "minigrid_VAE_"
+    prefix_name = "minigrid_AE_2022"
     dirFiles = os.listdir('save')
     prefixed = [filename for filename in dirFiles
                 if filename.startswith(prefix_name)]
 
     prefixed.sort(reverse=True)
     model_file_name = prefixed[0]
+    with torch.no_grad():
+        ae = torch.load("save/" + model_file_name).to(device)
+        ae.eval()
 
-    ae = torch.load("save/" + model_file_name).to(device)
-    ae.eval()
+        test_data = MinigridDataset(
+            "data/", "test",
+            image_size=input_dims, train_set_ratio=train_set_ratio)
 
-    test_data = MinigridDataset(
-        "data/", "test",
-        image_size=input_dims, train_set_ratio=train_set_ratio)
+        test_dataset = torch.utils.data.DataLoader(
+            test_data, batch_size=batch_size, shuffle=True,
+            num_workers=1, pin_memory=True)
 
-    test_dataset = torch.utils.data.DataLoader(
-        test_data, batch_size=batch_size, shuffle=True,
-        num_workers=1, pin_memory=True)
+        test_loss = test_model(ae, test_dataset)
+        print(test_loss)
+        random_data = test_data[
+            random.randint(0, len(test_data))]
+        random_data_hat = ae(torch.unsqueeze(random_data[0], 0).to(device))
 
-    test_loss = test_model(ae, test_dataset)
-    print(test_loss)
+        random_data_image = np.uint8(
+            random_data[0].cpu().numpy()*255
+            ).transpose(1, 2, 0)
+        random_data_hat_image = np.uint8(
+            random_data_hat[0].cpu().numpy()*255
+            ).transpose(1, 2, 0)
+        im_orig = Image.fromarray(random_data_image)
+        im_generated = Image.fromarray(random_data_hat_image)
+        im_orig.show()
+        im_generated.show()
 
 
 def test_minigrid_vae(random_visualize=False):
-    prefix_name = "minigrid_VAE_"
+    prefix_name = "minigrid_VAE_2022"
     dirFiles = os.listdir('save')
     prefixed = [filename for filename in dirFiles
                 if filename.startswith(prefix_name)]
@@ -71,12 +85,12 @@ def test_minigrid_vae(random_visualize=False):
             image_size=input_dims, train_set_ratio=train_set_ratio,
             use_cache=False)
 
-        test_dataset = torch.utils.data.DataLoader(
-            test_data, batch_size=batch_size, shuffle=True,
-            num_workers=1, pin_memory=True)
+        # test_dataset = torch.utils.data.DataLoader(
+        #     test_data, batch_size=batch_size, shuffle=True,
+        #     num_workers=1, pin_memory=True)
 
-        test_loss = test_model(vae, test_dataset)
-        print(test_loss)
+        # test_loss = test_model(vae, test_dataset)
+        # print(test_loss)
         random_data = test_data[
             random.randint(0, len(test_data))]
         random_data_hat = vae(torch.unsqueeze(random_data[0], 0).to(device))
@@ -91,7 +105,6 @@ def test_minigrid_vae(random_visualize=False):
         im_generated = Image.fromarray(random_data_hat_image)
         im_orig.show()
         im_generated.show()
-    pass
 
 
 if __name__ == "__main__":
