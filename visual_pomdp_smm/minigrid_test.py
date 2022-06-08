@@ -53,7 +53,7 @@ def test_minigrid_ae(random_visualize=False):
             image_size=input_dims, train_set_ratio=train_set_ratio)
 
         test_dataset = torch.utils.data.DataLoader(
-            test_data, batch_size=batch_size, shuffle=True,
+            test_data, batch_size=128, shuffle=True,
             num_workers=1, pin_memory=True)
 
         test_loss, latentArray = test_model(ae, test_dataset)
@@ -125,6 +125,11 @@ def scatterDatasetLatent(latentArray):
 
     for latent in tqdm(latentArray):
         ax.scatter(latent[0], latent[1], latent[2])
+
+    ltarr = np.array(latentArray)
+    ax.set_xlim3d(ltarr[:, 0].min(), ltarr[:, 0].max())
+    ax.set_ylim3d(ltarr[:, 1].min(), ltarr[:, 1].max())
+    ax.set_zlim3d(ltarr[:, 2].min(), ltarr[:, 2].max())
 
     plt.savefig('latent.png')
     # im_scatter = Image.frombytes(

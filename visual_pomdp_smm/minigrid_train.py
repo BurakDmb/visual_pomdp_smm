@@ -1,13 +1,13 @@
 import os
 from torch.utils.tensorboard import SummaryWriter
 import torch
-# import torch.nn as nn
+import torch.nn as nn
 
 from tqdm.auto import tqdm
 from datetime import datetime
 
 from visual_pomdp_smm.minigrid_utils import (
-    Autoencoder, MinigridDatasetParallel, VariationalAutoencoder,
+    Autoencoder, VariationalAutoencoder,
     MinigridDataset, latent_dims,
     input_dims, hidden_size, batch_size,
     epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
@@ -138,7 +138,7 @@ def main_minigrid_ae():
     autoencoder = Autoencoder(
         input_dims, latent_dims,
         hidden_size, in_channels)
-    autoencoder = MinigridDatasetParallel(autoencoder).to(device)
+    autoencoder = nn.DataParallel(autoencoder).to(device)
     autoencoder = train_ae(
         autoencoder, train_dataset, test_dataset,
         epochs=epochs, log_name="minigrid_AE")
@@ -164,7 +164,7 @@ def main_minigrid_vae():
         input_dims, latent_dims,
         hidden_size, in_channels)
 
-    vae = MinigridDatasetParallel(vae).to(device)
+    vae = nn.DataParallel(vae).to(device)
     vae = train_vae(
         vae, train_dataset, test_dataset,
         epochs=epochs, log_name="minigrid_VAE")

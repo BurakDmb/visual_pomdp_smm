@@ -16,8 +16,8 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 latent_dims = 3
 input_dims = 48
-hidden_size = 256
-batch_size = 512
+hidden_size = 128
+batch_size = 8192
 epochs = 50
 train_set_ratio = 0.8
 in_channels = 3
@@ -175,11 +175,6 @@ class VariationalAutoencoder(nn.Module):
     def forward(self, x):
         self.z = self.encoder(x)
         return self.decoder(self.z)
-
-
-class MinigridDatasetParallel(nn.DataParallel):
-    def __getattr__(self, name):
-        return getattr(self.module, name)
 
 
 class MinigridDataset(torch.utils.data.Dataset):
