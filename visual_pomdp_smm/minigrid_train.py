@@ -7,11 +7,14 @@ from tqdm.auto import tqdm
 from datetime import datetime
 
 from visual_pomdp_smm.minigrid_utils import (
-    Autoencoder, VariationalAutoencoder,
     MinigridDataset, latent_dims,
     input_dims, hidden_size, batch_size,
-    epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
+    epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient,
+    kernel_size, padding, dilation,
+    conv_hidden_size, conv1_stride, maxpool_stride
     )
+
+from pomdp_tmaze_baselines.utils.AE import Autoencoder, VariationalAutoencoder
 
 torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -121,6 +124,9 @@ def train_vae(
 
 def main_minigrid_ae():
 
+    input_dims, hidden_size, batch_size,
+    epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
+
     train_data = MinigridDataset(
         "data/", "train", image_size=input_dims,
         train_set_ratio=train_set_ratio, use_cache=False)
@@ -137,7 +143,9 @@ def main_minigrid_ae():
 
     autoencoder = Autoencoder(
         input_dims, latent_dims,
-        hidden_size, in_channels)
+        hidden_size, in_channels,
+        kernel_size, padding, dilation, conv_hidden_size,
+        conv1_stride, maxpool_stride)
     autoencoder = nn.DataParallel(autoencoder).to(device)
     autoencoder = train_ae(
         autoencoder, train_dataset, test_dataset,
@@ -162,7 +170,9 @@ def main_minigrid_vae():
 
     vae = VariationalAutoencoder(
         input_dims, latent_dims,
-        hidden_size, in_channels)
+        hidden_size, in_channels,
+        kernel_size, padding, dilation, conv_hidden_size,
+        conv1_stride, maxpool_stride)
 
     vae = nn.DataParallel(vae).to(device)
     vae = train_vae(
