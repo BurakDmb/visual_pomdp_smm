@@ -238,7 +238,7 @@ class MinigridMemoryDataset(torch.utils.data.Dataset):
         else:
             imgs = sorted([
                 f for f in self.data_dir.iterdir()
-                if f.match('minigridkey_other*.png')])
+                if f.match('minigridkey_*.png')])
 
             self.imgs = imgs[
                 :int(len(imgs) * train_set_ratio)
