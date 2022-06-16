@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 from datetime import datetime
 
 from visual_pomdp_smm.minigrid_utils import (
-    MinigridDataset, latent_dims,
+    MinigridDataset, MinigridMemoryDataset, latent_dims,
     input_dims, hidden_size, batch_size,
     epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient,
     kernel_size, padding, dilation,
@@ -15,6 +15,8 @@ from visual_pomdp_smm.minigrid_utils import (
     )
 
 from pomdp_tmaze_baselines.utils.AE import Autoencoder, VariationalAutoencoder
+from pomdp_tmaze_baselines.utils.AE import ConvAutoencoder
+
 
 torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -152,6 +154,36 @@ def main_minigrid_ae():
         epochs=epochs, log_name="minigrid_AE")
 
 
+def main_minigrid_memory_ae():
+
+    input_dims, hidden_size, batch_size,
+    epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
+
+    train_data = MinigridMemoryDataset(
+        "data/", "train", image_size=input_dims,
+        train_set_ratio=train_set_ratio, use_cache=False)
+    test_data = MinigridMemoryDataset(
+        "data/", "test", image_size=input_dims,
+        train_set_ratio=train_set_ratio, use_cache=False)
+
+    train_dataset = torch.utils.data.DataLoader(
+        train_data, batch_size=batch_size, shuffle=True,
+        num_workers=4, pin_memory=True)
+    test_dataset = torch.utils.data.DataLoader(
+        test_data, batch_size=batch_size, shuffle=True,
+        num_workers=4, pin_memory=True)
+
+    autoencoder = ConvAutoencoder(
+        input_dims, latent_dims,
+        hidden_size, in_channels,
+        kernel_size, padding, dilation, conv_hidden_size,
+        conv1_stride, maxpool_stride)
+    autoencoder = nn.DataParallel(autoencoder).to(device)
+    autoencoder = train_ae(
+        autoencoder, train_dataset, test_dataset,
+        epochs=epochs, log_name="minigrid_memory_AE")
+
+
 def main_minigrid_vae():
 
     train_data = MinigridDataset(
@@ -181,5 +213,6 @@ def main_minigrid_vae():
 
 
 if __name__ == "__main__":
-    main_minigrid_ae()
+    main_minigrid_memory_ae()
+    # main_minigrid_ae()
     # main_minigrid_vae()

@@ -7,6 +7,7 @@ import random
 import numpy as np
 from tqdm.auto import tqdm
 from visual_pomdp_smm.minigrid_utils import MinigridDataset
+from visual_pomdp_smm.minigrid_utils import MinigridMemoryDataset
 from visual_pomdp_smm.minigrid_utils import batch_size, train_set_ratio,\
     input_dims
 
@@ -21,18 +22,97 @@ def test_model(
         autoencoder, test_dataset):
 
     total_test_loss = 0
+    total_sample_number = 0
     latentArray = []
     autoencoder.eval()
     with torch.no_grad():
         # for x, y in test_dataset:
         for batch_idx, (x, y) in enumerate(test_dataset):
+            total_sample_number += len(x)
             x = x.to(device)
             x_hat = autoencoder(x)
             loss = ((x - x_hat)**2).sum()
             total_test_loss += loss.item()
             latentArray.extend(autoencoder.z.cpu().numpy().tolist())
 
-    return total_test_loss, latentArray
+    return total_test_loss, total_sample_number, latentArray
+
+
+def test_minigrid_memory_ae(random_visualize=False):
+    prefix_name = "minigrid_memory_AE_2022"
+    dirFiles = os.listdir('save')
+    prefixed = [filename for filename in dirFiles
+                if filename.startswith(prefix_name)]
+
+    prefixed.sort(reverse=True)
+    model_file_name = prefixed[0]
+    with torch.no_grad():
+        ae = torch.load("save/" + model_file_name).to(device)
+        ae = ae.module
+        ae.eval()
+
+        test_data = MinigridMemoryDataset(
+            "data/", "test",
+            image_size=input_dims, train_set_ratio=train_set_ratio)
+
+        test_dataset = torch.utils.data.DataLoader(
+            test_data, batch_size=256, shuffle=True,
+            num_workers=1, pin_memory=True)
+
+        key_data = MinigridMemoryDataset(
+            "data/", "key",
+            image_size=input_dims, train_set_ratio=train_set_ratio)
+
+        key_dataset = torch.utils.data.DataLoader(
+            key_data, batch_size=256, shuffle=True,
+            num_workers=1, pin_memory=True)
+
+        test_loss, test_sample_number, latentArray = test_model(
+            ae, test_dataset)
+        print("Test Dataset AvgLoss", test_loss/test_sample_number)
+
+        key_loss, key_sample_number, keylatentArray = test_model(
+            ae, key_dataset)
+        print("Key Dataset AvgLoss", key_loss/key_sample_number)
+
+        random_data = test_data[
+            random.randint(0, len(test_data))]
+        random_data_hat = ae(torch.unsqueeze(random_data[0], 0).to(device))
+
+        random_data_image = np.uint8(
+            random_data[0].cpu().numpy()*255
+            ).transpose(1, 2, 0)
+        random_data_hat_image = np.uint8(
+            random_data_hat[0].cpu().numpy()*255
+            ).transpose(1, 2, 0)
+        im_orig = Image.fromarray(random_data_image)
+        im_generated = Image.fromarray(random_data_hat_image)
+
+        im_orig.show("im_orig.png")
+        im_generated.show("im_generated.png")
+
+        im_orig.save("im_orig.png")
+        im_generated.save("im_generated.png")
+
+        random_key_data = key_data[
+            random.randint(0, len(key_data))]
+        random_key_data_hat = ae(
+            torch.unsqueeze(random_key_data[0], 0).to(device))
+
+        random_key_data_image = np.uint8(
+            random_key_data[0].cpu().numpy()*255
+            ).transpose(1, 2, 0)
+        random_key_data_hat_image = np.uint8(
+            random_key_data_hat[0].cpu().numpy()*255
+            ).transpose(1, 2, 0)
+        im_key_orig = Image.fromarray(random_key_data_image)
+        im_key_generated = Image.fromarray(random_key_data_hat_image)
+
+        im_key_orig.show("im_key_orig")
+        im_key_generated.show("im_key_generated")
+        im_key_orig.save("im_key_orig.png")
+        im_key_generated.save("im_key_generated.png")
+        # scatterDatasetLatent(latentArray)
 
 
 def test_minigrid_ae(random_visualize=False):
@@ -56,7 +136,7 @@ def test_minigrid_ae(random_visualize=False):
             test_data, batch_size=128, shuffle=True,
             num_workers=1, pin_memory=True)
 
-        test_loss, latentArray = test_model(ae, test_dataset)
+        test_loss, _, latentArray = test_model(ae, test_dataset)
         print(test_loss)
 
         random_data = test_data[
@@ -101,7 +181,7 @@ def test_minigrid_vae(random_visualize=False):
             test_data, batch_size=batch_size, shuffle=True,
             num_workers=1, pin_memory=True)
 
-        test_loss, latentArray = test_model(vae, test_dataset)
+        test_loss, _, latentArray = test_model(vae, test_dataset)
         print(test_loss)
         random_data = test_data[
             random.randint(0, len(test_data))]
@@ -139,5 +219,6 @@ def scatterDatasetLatent(latentArray):
 
 
 if __name__ == "__main__":
-    test_minigrid_ae(random_visualize=True)
+    test_minigrid_memory_ae(random_visualize=True)
+    # test_minigrid_ae(random_visualize=True)
     # test_minigrid_vae(random_visualize=True)
