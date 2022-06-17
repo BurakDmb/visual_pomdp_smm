@@ -15,6 +15,7 @@ from visual_pomdp_smm.minigrid_utils import batch_size, train_set_ratio,\
 # matplotlib.use('GTK3Agg')
 
 torch.manual_seed(0)
+random.seed(None)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -91,8 +92,8 @@ def test_minigrid_memory_ae(random_visualize=False):
         im_orig.show("im_orig.png")
         im_generated.show("im_generated.png")
 
-        im_orig.save("im_orig.png")
-        im_generated.save("im_generated.png")
+        im_orig.save("results/im_orig.png")
+        im_generated.save("results/im_generated.png")
 
         random_key_data = key_data[
             random.randint(0, len(key_data))]
@@ -110,8 +111,9 @@ def test_minigrid_memory_ae(random_visualize=False):
 
         im_key_orig.show("im_key_orig")
         im_key_generated.show("im_key_generated")
-        im_key_orig.save("im_key_orig.png")
-        im_key_generated.save("im_key_generated.png")
+
+        im_key_orig.save("results/im_key_orig.png")
+        im_key_generated.save("results/im_key_generated.png")
         # scatterDatasetLatent(latentArray)
 
 
@@ -153,8 +155,8 @@ def test_minigrid_ae(random_visualize=False):
         im_generated = Image.fromarray(random_data_hat_image)
         im_orig.show()
         im_generated.show()
-        im_orig.save("im_orig.png")
-        im_generated.save("im_generated.png")
+        im_orig.save("results/im_orig.png")
+        im_generated.save("results/im_generated.png")
         scatterDatasetLatent(latentArray)
 
 
