@@ -31,10 +31,10 @@ def test_model(
         for batch_idx, (x, y) in enumerate(test_dataset):
             total_sample_number += len(x)
             x = x.to(device)
-            x_hat = autoencoder(x)
+            x_hat, z = autoencoder(x)
             loss = ((x - x_hat)**2).sum()
             total_test_loss += loss.item()
-            latentArray.extend(autoencoder.z.cpu().numpy().tolist())
+            latentArray.extend(z.cpu().numpy().tolist())
 
     return total_test_loss, total_sample_number, latentArray
 
@@ -78,7 +78,7 @@ def test_minigrid_memory_ae(random_visualize=False):
 
         random_data = test_data[
             random.randint(0, len(test_data))]
-        random_data_hat = ae(torch.unsqueeze(random_data[0], 0).to(device))
+        random_data_hat, _ = ae(torch.unsqueeze(random_data[0], 0).to(device))
 
         random_data_image = np.uint8(
             random_data[0].cpu().numpy()*255
@@ -97,7 +97,7 @@ def test_minigrid_memory_ae(random_visualize=False):
 
         random_key_data = key_data[
             random.randint(0, len(key_data))]
-        random_key_data_hat = ae(
+        random_key_data_hat, _ = ae(
             torch.unsqueeze(random_key_data[0], 0).to(device))
 
         random_key_data_image = np.uint8(
@@ -143,7 +143,7 @@ def test_minigrid_ae(random_visualize=False):
 
         random_data = test_data[
             random.randint(0, len(test_data))]
-        random_data_hat = ae(torch.unsqueeze(random_data[0], 0).to(device))
+        random_data_hat, _ = ae(torch.unsqueeze(random_data[0], 0).to(device))
 
         random_data_image = np.uint8(
             random_data[0].cpu().numpy()*255
@@ -187,7 +187,7 @@ def test_minigrid_vae(random_visualize=False):
         print(test_loss)
         random_data = test_data[
             random.randint(0, len(test_data))]
-        random_data_hat = vae(torch.unsqueeze(random_data[0], 0).to(device))
+        random_data_hat, _ = vae(torch.unsqueeze(random_data[0], 0).to(device))
 
         random_data_image = np.uint8(
             random_data[0].cpu().numpy()*255

@@ -42,7 +42,7 @@ def train_ae(
         for batch_idx, (x, y) in enumerate(train_dataset):
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
-            x_hat = autoencoder(x)
+            x_hat, _ = autoencoder(x)
             loss = ((x - x_hat)**2).sum()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -61,7 +61,7 @@ def train_ae(
             # for x, y in test_dataset:
             for batch_idx, (x, y) in enumerate(test_dataset):
                 x = x.to(device)
-                x_hat = autoencoder(x)
+                x_hat, _ = autoencoder(x)
                 loss = ((x - x_hat)**2).sum()
                 total_test_loss += loss.item()
 
@@ -91,7 +91,7 @@ def train_vae(
         for batch_idx, (x, y) in enumerate(train_dataset):
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
-            x_hat = autoencoder(x)
+            x_hat, _ = autoencoder(x)
             loss = ((x - x_hat)**2).sum() + autoencoder.encoder.kl
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -111,7 +111,7 @@ def train_vae(
             for batch_idx, (x, y) in enumerate(test_dataset):
                 x = x.to(device)
                 opt.zero_grad()
-                x_hat = autoencoder(x)
+                x_hat, _ = autoencoder(x)
                 loss = ((x - x_hat)**2).sum()
                 total_test_loss += loss.item()
 
