@@ -1,12 +1,17 @@
 from gym_minigrid.window import Window
-from gym_minigrid.wrappers import RGBImgObsWrapper
+from PIL import Image
 import os
 import gym
+from gym_minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
 
 
 def redraw(obs):
-    img = env.render('rgb_array', tile_size=tile_size)
-    window.show_img(img)
+    if PARTIALOBS:
+        observation_ae_img = Image.fromarray(obs)
+        window.show_img(observation_ae_img)
+    else:
+        img = env.render('rgb_array', tile_size=tile_size)
+        window.show_img(img)
 
 
 def key_handler(event):
@@ -43,9 +48,10 @@ def step(action):
         print('done!')
         obs = env.reset()
     redraw(obs)
-    window.fig.savefig(
-        "manual_images/Minigrid_"+str(env.count)+".png",
-        bbox_inches='tight', pad_inches=0)
+    if SAVEFIG:
+        window.fig.savefig(
+            "manual_images/Minigrid_"+str(env.count)+".png",
+            bbox_inches='tight', pad_inches=0)
     env.count += 1
 
 
@@ -53,8 +59,12 @@ tile_size = 32
 window = Window("gym_minigrid - MiniGrid-Empty-Random-5x5-v0")
 window.reg_key_handler(key_handler)
 
-env = gym.make('MiniGrid-Empty-Random-6x6-v0')
-env = RGBImgObsWrapper(env)
+env = gym.make('MiniGrid-MemoryS13-v0')
+env = RGBImgPartialObsWrapper(env)
+env = ImgObsWrapper(env)
+PARTIALOBS = True
+SAVEFIG = False
+
 obs = env.reset()
 redraw(obs)
 env.count = 0
