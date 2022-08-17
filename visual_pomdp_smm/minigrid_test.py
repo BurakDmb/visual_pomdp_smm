@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 from visual_pomdp_smm.minigrid_utils import MinigridDataset
 from visual_pomdp_smm.minigrid_utils import MinigridMemoryDataset
 from visual_pomdp_smm.minigrid_utils import batch_size, train_set_ratio,\
-    input_dims
+    input_dims, in_channels
 
 # plt.rcParams['figure.dpi'] = 200
 # matplotlib.use('GTK3Agg')
@@ -22,6 +22,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 def test_model(
         autoencoder, test_dataset):
 
+    test_losses = []
     total_test_loss = 0
     total_sample_number = 0
     latentArray = []
@@ -34,9 +35,10 @@ def test_model(
             x_hat, z = autoencoder(x)
             loss = ((x - x_hat)**2).sum()
             total_test_loss += loss.item()
+            test_losses.append(loss.item())
             latentArray.extend(z.cpu().numpy().tolist())
 
-    return total_test_loss, total_sample_number, latentArray
+    return total_test_loss, total_sample_number, latentArray, test_losses
 
 
 def test_minigrid_memory_ae(random_visualize=False):
@@ -68,13 +70,42 @@ def test_minigrid_memory_ae(random_visualize=False):
             key_data, batch_size=256, shuffle=True,
             num_workers=1, pin_memory=True)
 
-        test_loss, test_sample_number, latentArray = test_model(
+        test_loss, test_sample_number, latentArray, test_losses = test_model(
             ae, test_dataset)
-        print("Test Dataset AvgLoss", test_loss/test_sample_number)
 
-        key_loss, key_sample_number, keylatentArray = test_model(
+        norm_test_loss = (
+            np.array(test_losses) / (1*input_dims*input_dims*in_channels)
+            )
+
+        print(
+            "Test Dataset AvgLoss: ",
+            "{:.2e}".format(norm_test_loss.sum()/test_sample_number))
+        print(
+            "Test Dataset min and max normalized loss. Min: " +
+            str(norm_test_loss.min()) +
+            ", Max: " +
+            str(norm_test_loss.max()))
+
+        key_loss, key_sample_number, keylatentArray, key_losses = test_model(
             ae, key_dataset)
-        print("Key Dataset AvgLoss", key_loss/key_sample_number)
+        norm_key_losses = (
+            np.array(key_losses) / (1*input_dims*input_dims*in_channels)
+            )
+
+        print(
+            "Key Dataset AvgLoss",
+            "{:.2e}".format(norm_key_losses.sum()/key_sample_number))
+        print(
+            "Key Dataset min and max normalized loss. Min: " +
+            str(norm_key_losses.min()) +
+            ", Max: " +
+            str(norm_key_losses.max()))
+
+        percent_difference = (
+            (norm_key_losses.sum()/key_sample_number)
+            / (norm_test_loss.sum()/test_sample_number)
+            ) * 100 - 100
+        print("Percent diff (key/test) (%): ", percent_difference)
 
         random_data = test_data[
             random.randint(0, len(test_data))]
@@ -138,7 +169,7 @@ def test_minigrid_ae(random_visualize=False):
             test_data, batch_size=128, shuffle=True,
             num_workers=1, pin_memory=True)
 
-        test_loss, _, latentArray = test_model(ae, test_dataset)
+        test_loss, _, latentArray, test_losses = test_model(ae, test_dataset)
         print(test_loss)
 
         random_data = test_data[
@@ -183,7 +214,7 @@ def test_minigrid_vae(random_visualize=False):
             test_data, batch_size=batch_size, shuffle=True,
             num_workers=1, pin_memory=True)
 
-        test_loss, _, latentArray = test_model(vae, test_dataset)
+        test_loss, _, latentArray, test_losses = test_model(vae, test_dataset)
         print(test_loss)
         random_data = test_data[
             random.randint(0, len(test_data))]

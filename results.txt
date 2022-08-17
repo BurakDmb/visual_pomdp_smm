@@ -1,0 +1,5 @@
+Test Dataset AvgLoss:  9.00e-05
+Test Dataset min and max normalized loss. Min: 0.001520585130762171, Max: 0.024436994835182472
+Key Dataset AvgLoss 1.81e-04
+Key Dataset min and max normalized loss. Min: 0.04274153267895734, Max: 0.050999747382269964
+Percent diff (key/test) (%):  101.52715508110828
