@@ -14,23 +14,6 @@ plt.rcParams['figure.dpi'] = 200
 torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-latent_dims = 128
-input_dims = 48
-hidden_size = 32
-batch_size = 64
-epochs = 1000
-train_set_ratio = 0.8
-in_channels = 3
-learning_rate = 1e-4
-maximum_gradient = 1e7
-
-kernel_size = 4
-padding = 3
-dilation = 1
-conv_hidden_size = 32
-conv1_stride = 6
-maxpool_stride = 1
-
 
 class MinigridDataset(torch.utils.data.Dataset):
     def __init__(

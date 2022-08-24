@@ -8,8 +8,8 @@ import numpy as np
 from tqdm.auto import tqdm
 from visual_pomdp_smm.minigrid_utils import MinigridDataset
 from visual_pomdp_smm.minigrid_utils import MinigridMemoryDataset
-from visual_pomdp_smm.minigrid_utils import batch_size, train_set_ratio,\
-    input_dims, in_channels
+# from visual_pomdp_smm.minigrid_utils import batch_size, train_set_ratio,\
+# input_dims, in_channels
 
 # plt.rcParams['figure.dpi'] = 200
 # matplotlib.use('GTK3Agg')
@@ -41,7 +41,8 @@ def test_model(
     return total_test_loss, total_sample_number, latentArray, test_losses
 
 
-def test_minigrid_memory_ae(random_visualize=False):
+def test_minigrid_memory_ae(params, random_visualize=False):
+    print("Testing for param path: " + params['save_path'])
     prefix_name = "minigrid_memory_AE_2022"
     dirFiles = os.listdir('save')
     prefixed = [filename for filename in dirFiles
@@ -56,7 +57,8 @@ def test_minigrid_memory_ae(random_visualize=False):
 
         test_data = MinigridMemoryDataset(
             "data/", "test",
-            image_size=input_dims, train_set_ratio=train_set_ratio)
+            image_size=params['input_dims'],
+            train_set_ratio=params['train_set_ratio'])
 
         test_dataset = torch.utils.data.DataLoader(
             test_data, batch_size=256, shuffle=True,
@@ -64,7 +66,8 @@ def test_minigrid_memory_ae(random_visualize=False):
 
         key_data = MinigridMemoryDataset(
             "data/", "key",
-            image_size=input_dims, train_set_ratio=train_set_ratio)
+            image_size=params['input_dims'],
+            train_set_ratio=params['train_set_ratio'])
 
         key_dataset = torch.utils.data.DataLoader(
             key_data, batch_size=256, shuffle=True,
@@ -74,7 +77,10 @@ def test_minigrid_memory_ae(random_visualize=False):
             ae, test_dataset)
 
         norm_test_loss = (
-            np.array(test_losses) / (1*input_dims*input_dims*in_channels)
+            np.array(test_losses) / (
+                1*params['input_dims'] *
+                params['input_dims'] *
+                params['in_channels'])
             )
 
         print(
@@ -89,7 +95,10 @@ def test_minigrid_memory_ae(random_visualize=False):
         key_loss, key_sample_number, keylatentArray, key_losses = test_model(
             ae, key_dataset)
         norm_key_losses = (
-            np.array(key_losses) / (1*input_dims*input_dims*in_channels)
+            np.array(key_losses) / (
+                1*params['input_dims'] *
+                params['input_dims'] *
+                params['in_channels'])
             )
 
         print(
@@ -148,7 +157,8 @@ def test_minigrid_memory_ae(random_visualize=False):
         # scatterDatasetLatent(latentArray)
 
 
-def test_minigrid_ae(random_visualize=False):
+def test_minigrid_ae(params, random_visualize=False):
+    print("Testing for param path: " + params['save_path'])
     prefix_name = "minigrid_AE_2022"
     dirFiles = os.listdir('save')
     prefixed = [filename for filename in dirFiles
@@ -163,10 +173,11 @@ def test_minigrid_ae(random_visualize=False):
 
         test_data = MinigridDataset(
             "data/", "test",
-            image_size=input_dims, train_set_ratio=train_set_ratio)
+            image_size=params['input_dims'],
+            train_set_ratio=params['train_set_ratio'])
 
         test_dataset = torch.utils.data.DataLoader(
-            test_data, batch_size=128, shuffle=True,
+            test_data, batch_size=params['batch_size'], shuffle=True,
             num_workers=1, pin_memory=True)
 
         test_loss, _, latentArray, test_losses = test_model(ae, test_dataset)
@@ -191,7 +202,8 @@ def test_minigrid_ae(random_visualize=False):
         scatterDatasetLatent(latentArray)
 
 
-def test_minigrid_vae(random_visualize=False):
+def test_minigrid_vae(params, random_visualize=False):
+    print("Testing for param path: " + params['save_path'])
     prefix_name = "minigrid_VAE_2022"
     dirFiles = os.listdir('save')
     prefixed = [filename for filename in dirFiles
@@ -207,11 +219,12 @@ def test_minigrid_vae(random_visualize=False):
 
         test_data = MinigridDataset(
             "data/", "test",
-            image_size=input_dims, train_set_ratio=train_set_ratio,
+            image_size=params['input_dims'],
+            train_set_ratio=params['train_set_ratio'],
             use_cache=False)
 
         test_dataset = torch.utils.data.DataLoader(
-            test_data, batch_size=batch_size, shuffle=True,
+            test_data, batch_size=params['batch_size'], shuffle=True,
             num_workers=1, pin_memory=True)
 
         test_loss, _, latentArray, test_losses = test_model(vae, test_dataset)
@@ -252,6 +265,8 @@ def scatterDatasetLatent(latentArray):
 
 
 if __name__ == "__main__":
-    test_minigrid_memory_ae(random_visualize=True)
-    # test_minigrid_ae(random_visualize=True)
-    # test_minigrid_vae(random_visualize=True)
+    from visual_pomdp_smm.minigrid_params import params_list
+    for params in params_list:
+        test_minigrid_memory_ae(params, random_visualize=True)
+        # test_minigrid_ae(params, random_visualize=True)
+        # test_minigrid_vae(params, random_visualize=True)
