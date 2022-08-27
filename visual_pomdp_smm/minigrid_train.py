@@ -76,7 +76,7 @@ def train_ae(
         writer.add_scalar(
             "AvgLossPerEpoch/test", total_test_loss/len(test_dataset), epoch)
         writer.flush()
-    saveModelWithParams(autoencoder, log_name, filename_date)
+    saveModelWithParams(autoencoder, log_name, filename_date, params)
     # torch.save(
     #     autoencoder, save_folder_name + "/" + log_name + "_" +
     #     filename_date + ".torch")
@@ -128,7 +128,7 @@ def train_vae(
         writer.add_scalar(
             "AvgLossPerEpoch/test", total_test_loss/len(test_dataset), epoch)
         writer.flush()
-    saveModelWithParams(autoencoder, log_name, filename_date)
+    saveModelWithParams(autoencoder, log_name, filename_date, params)
     # torch.save(
     #     autoencoder, save_folder_name + "/" + log_name + "_" +
     #     filename_date + ".torch")
@@ -229,7 +229,7 @@ def main_minigrid_vae(params):
 if __name__ == "__main__":
     from visual_pomdp_smm.minigrid_params import params_list
     import torch.multiprocessing as mp
-    mp.set_start_method('forkserver', force=True)
+    mp.set_start_method('spawn', force=True)
     processes = []
     for params in params_list:
         # main_minigrid_memory_ae(params)
