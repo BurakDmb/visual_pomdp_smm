@@ -53,7 +53,7 @@ def train_ae_binary(
             opt.zero_grad(set_to_none=True)
             x_hat, x_latent = autoencoder(x)
             loss = (
-                torch.mean((x - x_hat)**2) -
+                torch.mean((x - x_hat)**2) +
                 params['lambda']*torch.mean(
                     torch.mean(
                         torch.minimum(
@@ -77,8 +77,14 @@ def train_ae_binary(
             # for x, y in test_dataset:
             for batch_idx, (x, y) in enumerate(test_dataset):
                 x = x.to(device)
-                x_hat, _ = autoencoder(x)
-                loss = ((x - x_hat)**2).sum()
+                x_hat, x_latent = autoencoder(x)
+                loss = (
+                    torch.mean((x - x_hat)**2) +
+                    params['lambda']*torch.mean(
+                        torch.mean(
+                            torch.minimum(
+                                (x_latent)**2,
+                                (1-x_latent)**2), 1), 0))
                 total_test_loss += loss.item()
 
         writer.add_scalar(
@@ -239,10 +245,10 @@ def main_minigrid_memory_binary_ae(params):
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=params['batch_size'], shuffle=True,
-        num_workers=4, pin_memory=True)
+        num_workers=1, pin_memory=True)
     test_dataset = torch.utils.data.DataLoader(
         test_data, batch_size=params['batch_size'], shuffle=True,
-        num_workers=4, pin_memory=True)
+        num_workers=1, pin_memory=True)
 
     autoencoder = ConvBinaryAutoencoder(
         params['input_dims'], params['latent_dims'],

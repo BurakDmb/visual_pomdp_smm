@@ -2,7 +2,7 @@ params256 = {
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 32,
-    'batch_size': 64,
+    'batch_size': 1024,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -14,7 +14,7 @@ params256 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
-    'lambda': 0.05,
+    'lambda': 0.005,
 }
 
 
@@ -22,7 +22,7 @@ params128 = {
     'latent_dims': 128,
     'input_dims': 48,
     'hidden_size': 32,
-    'batch_size': 64,
+    'batch_size': 1024,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -34,7 +34,7 @@ params128 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
-    'lambda': 0.05,
+    'lambda': 0.005,
 }
 
 
@@ -42,7 +42,7 @@ params64 = {
     'latent_dims': 64,
     'input_dims': 48,
     'hidden_size': 32,
-    'batch_size': 64,
+    'batch_size': 1024,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -54,14 +54,14 @@ params64 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
-    'lambda': 0.05,
+    'lambda': 0.005,
 }
 
 params32 = {
     'latent_dims': 32,
     'input_dims': 48,
     'hidden_size': 32,
-    'batch_size': 64,
+    'batch_size': 1024,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -73,14 +73,14 @@ params32 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
-    'lambda': 0.05,
+    'lambda': 0.005,
 }
 
 params16 = {
     'latent_dims': 16,
     'input_dims': 48,
     'hidden_size': 32,
-    'batch_size': 64,
+    'batch_size': 1024,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -92,6 +92,7 @@ params16 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
-    'lambda': 0.05,
+    'lambda': 0.005,
 }
 params_list = [params256, params128, params64, params32, params16]
+params_list = [params256, params64, params16]
