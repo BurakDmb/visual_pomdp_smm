@@ -14,6 +14,7 @@ params256 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
+    'lambda': 0.05,
 }
 
 
@@ -33,6 +34,7 @@ params128 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
+    'lambda': 0.05,
 }
 
 
@@ -52,6 +54,7 @@ params64 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
+    'lambda': 0.05,
 }
 
 params32 = {
@@ -70,6 +73,7 @@ params32 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
+    'lambda': 0.05,
 }
 
 params16 = {
@@ -88,5 +92,6 @@ params16 = {
     'conv_hidden_size': 32,
     'conv1_stride': 6,
     'maxpool_stride': 1,
+    'lambda': 0.05,
 }
 params_list = [params256, params128, params64, params32, params16]

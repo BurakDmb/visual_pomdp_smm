@@ -11,7 +11,8 @@ from visual_pomdp_smm.minigrid_utils import (
     MinigridDataset, MinigridMemoryDataset)
 
 from pomdp_tmaze_baselines.utils.AE import Autoencoder, VariationalAutoencoder
-from pomdp_tmaze_baselines.utils.AE import ConvAutoencoder, ConvBinaryAutoencoder
+from pomdp_tmaze_baselines.utils.AE import ConvAutoencoder
+from pomdp_tmaze_baselines.utils.AE import ConvBinaryAutoencoder
 
 
 torch.manual_seed(0)
@@ -50,11 +51,16 @@ def train_ae_binary(
         for batch_idx, (x, y) in enumerate(train_dataset):
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
-            x_hat, _ = autoencoder(x)
+            x_hat, x_latent = autoencoder(x)
             loss = (
-                ((x - x_hat)**2).sum() + 
-                torch.min())
+                torch.mean((x - x_hat)**2) -
+                params['lambda']*torch.mean(
+                    torch.mean(
+                        torch.minimum(
+                            (x_latent)**2,
+                            (1-x_latent)**2), 1), 0))
             loss.backward()
+
             torch.nn.utils.clip_grad_norm_(
                 autoencoder.parameters(), params['maximum_gradient'])
             opt.step()
@@ -218,6 +224,7 @@ def main_minigrid_ae(params):
         autoencoder, train_dataset, test_dataset, params,
         epochs=params['epochs'], log_name="minigrid_AE")
 
+
 def main_minigrid_memory_binary_ae(params):
 
     # input_dims, hidden_size, batch_size,
@@ -247,6 +254,7 @@ def main_minigrid_memory_binary_ae(params):
     autoencoder = train_ae_binary(
         autoencoder, train_dataset, test_dataset, params,
         epochs=params['epochs'], log_name="minigrid_memory_binary_AE")
+
 
 def main_minigrid_memory_ae(params):
 
