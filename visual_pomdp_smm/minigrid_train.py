@@ -26,10 +26,13 @@ def saveModelWithParams(autoencoder, log_name, filename_date, params):
     save_path = (
         save_folder_name + "/" +
         log_name + "_" + filename_date)
+    json_save_path = (
+        save_folder_name + "/json/" +
+        log_name + "_" + filename_date)
     params['save_path'] = save_path
     torch.save(
         autoencoder, save_path + ".torch")
-    with open(save_path + ".json", 'w') as params_file:
+    with open(json_save_path + ".json", 'w') as params_file:
         params_file.write(json.dumps(params))
 
 
@@ -58,7 +61,8 @@ def train_ae_binary(
                     torch.mean(
                         torch.minimum(
                             (x_latent)**2,
-                            (1-x_latent)**2), 1), 0))
+                            (1-x_latent)**2),
+                        1), 0))
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(
