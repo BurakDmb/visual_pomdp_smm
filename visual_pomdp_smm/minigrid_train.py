@@ -56,13 +56,12 @@ def train_ae_binary(
             opt.zero_grad(set_to_none=True)
             x_hat, x_latent = autoencoder(x)
             loss = (
-                torch.mean((x - x_hat)**2) +
-                params['lambda']*torch.mean(
-                    torch.mean(
-                        torch.minimum(
-                            (x_latent)**2,
-                            (1-x_latent)**2),
-                        1), 0))
+                (((x-x_hat)**2).sum(dim=(1, 2, 3))/(params['batch_size'])) +
+                params['lambda']*(torch.minimum(
+                    (x_latent)**2,
+                    (1-x_latent)**2
+                    ).sum(dim=1)/params['latent_dims'])
+                ).sum(dim=0)/(params['batch_size'])
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(
@@ -83,12 +82,13 @@ def train_ae_binary(
                 x = x.to(device)
                 x_hat, x_latent = autoencoder(x)
                 loss = (
-                    torch.mean((x - x_hat)**2) +
-                    params['lambda']*torch.mean(
-                        torch.mean(
-                            torch.minimum(
-                                (x_latent)**2,
-                                (1-x_latent)**2), 1), 0))
+                    (((x-x_hat)**2).sum(dim=(1, 2, 3)) /
+                        (params['batch_size'])) +
+                    params['lambda']*(torch.minimum(
+                        (x_latent)**2,
+                        (1-x_latent)**2
+                        ).sum(dim=1)/params['latent_dims'])
+                    ).sum(dim=0)/(params['batch_size'])
                 total_test_loss += loss.item()
 
         writer.add_scalar(
