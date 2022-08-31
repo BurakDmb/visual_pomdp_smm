@@ -143,6 +143,8 @@ def test_minigrid_memory_binary_ae(random_visualize=False):
             # im_orig.show("im_orig.png")
             # im_generated.show("im_generated.png")
 
+            if not os.path.exists("save/results"):
+                os.makedirs("save/results")
             im_orig.save(
                 "save/results/im_orig_" +
                 filename.replace(".json", "") + ".png")
