@@ -140,11 +140,9 @@ def test_minigrid_memory_binary_ae(random_visualize=False):
             im_orig = Image.fromarray(random_data_image)
             im_generated = Image.fromarray(random_data_hat_image)
 
-            # im_orig.show("im_orig.png")
-            # im_generated.show("im_generated.png")
-
             if not os.path.exists("save/results"):
                 os.makedirs("save/results")
+
             im_orig.save(
                 "save/results/im_orig_" +
                 filename.replace(".json", "") + ".png")
@@ -166,8 +164,134 @@ def test_minigrid_memory_binary_ae(random_visualize=False):
             im_key_orig = Image.fromarray(random_key_data_image)
             im_key_generated = Image.fromarray(random_key_data_hat_image)
 
-            # im_key_orig.show("im_key_orig")
-            # im_key_generated.show("im_key_generated")
+            im_key_orig.save(
+                "save/results/im_key_orig_" +
+                filename.replace(".json", "") + ".png")
+            im_key_generated.save(
+                "save/results/im_key_generated_" +
+                filename.replace(".json", "") + ".png")
+            print("")
+
+
+def test_minigrid_memory_ae(random_visualize=False):
+    prefix_name = "minigrid_memory_AE_2022"
+    dirFiles = os.listdir('save/json')
+    prefixed = [filename for filename in dirFiles
+                if filename.startswith(prefix_name)]
+
+    prefixed.sort(reverse=True)
+    for filename in prefixed:
+        with open("save/json/"+filename, 'r') as params_file:
+            params = json.loads(params_file.read())
+        model_file_name = params['save_path']
+        print("Testing for param path: " + params['save_path'])
+
+        with torch.no_grad():
+            ae = torch.load(model_file_name+".torch").to(device)
+            ae = ae.module
+            ae.eval()
+
+            test_data = MinigridMemoryDataset(
+                "data/", "test",
+                image_size=params['input_dims'],
+                train_set_ratio=params['train_set_ratio'])
+
+            test_dataset = torch.utils.data.DataLoader(
+                test_data, batch_size=256, shuffle=True,
+                num_workers=1, pin_memory=True)
+
+            key_data = MinigridMemoryDataset(
+                "data/", "key",
+                image_size=params['input_dims'],
+                train_set_ratio=params['train_set_ratio'])
+
+            key_dataset = torch.utils.data.DataLoader(
+                key_data, batch_size=256, shuffle=True,
+                num_workers=1, pin_memory=True)
+
+            test_loss, test_sample_number, latentArray,\
+                test_losses = test_model(ae, test_dataset)
+
+            norm_test_loss = (
+                np.array(test_losses) / (
+                    1*params['input_dims'] *
+                    params['input_dims'] *
+                    params['in_channels'])
+                )
+
+            print(
+                "Test Dataset AvgLoss: ",
+                "{:.2e}".format(norm_test_loss.sum()/test_sample_number))
+            print(
+                "Test Dataset min and max normalized loss. Min: " +
+                str(norm_test_loss.min()) +
+                ", Max: " +
+                str(norm_test_loss.max()))
+
+            key_loss, key_sample_number, keylatentArray,\
+                key_losses = test_model(ae, key_dataset)
+            norm_key_losses = (
+                np.array(key_losses) / (
+                    1*params['input_dims'] *
+                    params['input_dims'] *
+                    params['in_channels'])
+                )
+
+            print(
+                "Key Dataset AvgLoss",
+                "{:.2e}".format(norm_key_losses.sum()/key_sample_number))
+            print(
+                "Key Dataset min and max normalized loss. Min: " +
+                str(norm_key_losses.min()) +
+                ", Max: " +
+                str(norm_key_losses.max()))
+
+            percent_difference = (
+                (norm_key_losses.sum()/key_sample_number)
+                / (norm_test_loss.sum()/test_sample_number)
+                ) * 100 - 100
+            print("Percent diff (key/test) (%): ", percent_difference)
+
+            random_data = test_data[
+                random.randint(0, len(test_data))]
+            random_data_hat, _ = ae(
+                torch.unsqueeze(random_data[0], 0).to(device))
+
+            random_data_image = np.uint8(
+                random_data[0].cpu().numpy()*255
+                ).transpose(1, 2, 0)
+            random_data_hat_image = np.uint8(
+                random_data_hat[0].cpu().numpy()*255
+                ).transpose(1, 2, 0)
+            im_orig = Image.fromarray(random_data_image)
+            im_generated = Image.fromarray(random_data_hat_image)
+
+            # im_orig.show("im_orig.png")
+            # im_generated.show("im_generated.png")
+
+            if not os.path.exists("save/results"):
+                os.makedirs("save/results")
+
+            im_orig.save(
+                "save/results/im_orig_" +
+                filename.replace(".json", "") + ".png")
+            im_generated.save(
+                "save/results/im_generated_" +
+                filename.replace(".json", "") + ".png")
+
+            random_key_data = key_data[
+                random.randint(0, len(key_data))]
+            random_key_data_hat, _ = ae(
+                torch.unsqueeze(random_key_data[0], 0).to(device))
+
+            random_key_data_image = np.uint8(
+                random_key_data[0].cpu().numpy()*255
+                ).transpose(1, 2, 0)
+            random_key_data_hat_image = np.uint8(
+                random_key_data_hat[0].cpu().numpy()*255
+                ).transpose(1, 2, 0)
+            im_key_orig = Image.fromarray(random_key_data_image)
+            im_key_generated = Image.fromarray(random_key_data_hat_image)
 
             im_key_orig.save(
                 "save/results/im_key_orig_" +
@@ -175,123 +299,7 @@ def test_minigrid_memory_binary_ae(random_visualize=False):
             im_key_generated.save(
                 "save/results/im_key_generated_" +
                 filename.replace(".json", "") + ".png")
-            # scatterDatasetLatent(latentArray)
-
-
-def test_minigrid_memory_ae(params, random_visualize=False):
-    print("Testing for param path: " + params['save_path'])
-    prefix_name = "minigrid_memory_AE_2022"
-    dirFiles = os.listdir('save')
-    prefixed = [filename for filename in dirFiles
-                if filename.startswith(prefix_name)]
-
-    prefixed.sort(reverse=True)
-    model_file_name = prefixed[0]
-    with torch.no_grad():
-        ae = torch.load("save/" + model_file_name).to(device)
-        ae = ae.module
-        ae.eval()
-
-        test_data = MinigridMemoryDataset(
-            "data/", "test",
-            image_size=params['input_dims'],
-            train_set_ratio=params['train_set_ratio'])
-
-        test_dataset = torch.utils.data.DataLoader(
-            test_data, batch_size=256, shuffle=True,
-            num_workers=1, pin_memory=True)
-
-        key_data = MinigridMemoryDataset(
-            "data/", "key",
-            image_size=params['input_dims'],
-            train_set_ratio=params['train_set_ratio'])
-
-        key_dataset = torch.utils.data.DataLoader(
-            key_data, batch_size=256, shuffle=True,
-            num_workers=1, pin_memory=True)
-
-        test_loss, test_sample_number, latentArray, test_losses = test_model(
-            ae, test_dataset)
-
-        norm_test_loss = (
-            np.array(test_losses) / (
-                1*params['input_dims'] *
-                params['input_dims'] *
-                params['in_channels'])
-            )
-
-        print(
-            "Test Dataset AvgLoss: ",
-            "{:.2e}".format(norm_test_loss.sum()/test_sample_number))
-        print(
-            "Test Dataset min and max normalized loss. Min: " +
-            str(norm_test_loss.min()) +
-            ", Max: " +
-            str(norm_test_loss.max()))
-
-        key_loss, key_sample_number, keylatentArray, key_losses = test_model(
-            ae, key_dataset)
-        norm_key_losses = (
-            np.array(key_losses) / (
-                1*params['input_dims'] *
-                params['input_dims'] *
-                params['in_channels'])
-            )
-
-        print(
-            "Key Dataset AvgLoss",
-            "{:.2e}".format(norm_key_losses.sum()/key_sample_number))
-        print(
-            "Key Dataset min and max normalized loss. Min: " +
-            str(norm_key_losses.min()) +
-            ", Max: " +
-            str(norm_key_losses.max()))
-
-        percent_difference = (
-            (norm_key_losses.sum()/key_sample_number)
-            / (norm_test_loss.sum()/test_sample_number)
-            ) * 100 - 100
-        print("Percent diff (key/test) (%): ", percent_difference)
-
-        random_data = test_data[
-            random.randint(0, len(test_data))]
-        random_data_hat, _ = ae(torch.unsqueeze(random_data[0], 0).to(device))
-
-        random_data_image = np.uint8(
-            random_data[0].cpu().numpy()*255
-            ).transpose(1, 2, 0)
-        random_data_hat_image = np.uint8(
-            random_data_hat[0].cpu().numpy()*255
-            ).transpose(1, 2, 0)
-        im_orig = Image.fromarray(random_data_image)
-        im_generated = Image.fromarray(random_data_hat_image)
-
-        im_orig.show("im_orig.png")
-        im_generated.show("im_generated.png")
-
-        im_orig.save("results/im_orig.png")
-        im_generated.save("results/im_generated.png")
-
-        random_key_data = key_data[
-            random.randint(0, len(key_data))]
-        random_key_data_hat, _ = ae(
-            torch.unsqueeze(random_key_data[0], 0).to(device))
-
-        random_key_data_image = np.uint8(
-            random_key_data[0].cpu().numpy()*255
-            ).transpose(1, 2, 0)
-        random_key_data_hat_image = np.uint8(
-            random_key_data_hat[0].cpu().numpy()*255
-            ).transpose(1, 2, 0)
-        im_key_orig = Image.fromarray(random_key_data_image)
-        im_key_generated = Image.fromarray(random_key_data_hat_image)
-
-        im_key_orig.show("im_key_orig")
-        im_key_generated.show("im_key_generated")
-
-        im_key_orig.save("results/im_key_orig.png")
-        im_key_generated.save("results/im_key_generated.png")
-        # scatterDatasetLatent(latentArray)
+            print("")
 
 
 def test_minigrid_ae(params, random_visualize=False):
@@ -403,6 +411,8 @@ def scatterDatasetLatent(latentArray):
 
 if __name__ == "__main__":
     test_minigrid_memory_binary_ae(random_visualize=False)
+    # test_minigrid_memory_ae(random_visualize=False)
+
     # from visual_pomdp_smm.minigrid_params import params_list
     # for params in params_list:
     #     test_minigrid_memory_ae(params, random_visualize=True)
