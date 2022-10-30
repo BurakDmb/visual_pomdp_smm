@@ -5,10 +5,10 @@ from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
 from PIL import Image
 from tqdm.auto import tqdm
 
-# Total sample number is 100800
+# Total sample number is 230400
 tile_size = 21
 sample_per_episode = (tile_size-2)*(tile_size-2)*4 - 4
-epi_number = int(100800/sample_per_episode)
+epi_number = int(230400/sample_per_episode)
 k = tile_size//2
 agent_view_size = 5
 

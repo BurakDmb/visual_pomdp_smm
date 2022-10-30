@@ -1,41 +1,40 @@
-import os
-from torch.utils.tensorboard import SummaryWriter
-import torch
-import torch.nn as nn
 import json
-
-
-from tqdm.auto import tqdm
+import os
 from datetime import datetime
 
-from pomdp_tmaze_baselines.utils.AE import Autoencoder
-from pomdp_tmaze_baselines.utils.AE import VariationalAutoencoder
-from pomdp_tmaze_baselines.utils.AE import ConvAutoencoder
-from pomdp_tmaze_baselines.utils.AE import ConvBinaryAutoencoder
-from pomdp_tmaze_baselines.utils.AE import ConvVariationalAutoencoder
+import torch
+import torch.nn as nn
+from pomdp_tmaze_baselines.utils.AE import (Autoencoder, ConvAutoencoder,
+                                            ConvBinaryAutoencoder,
+                                            ConvVariationalAutoencoder,
+                                            VariationalAutoencoder)
+from torch.utils.tensorboard import SummaryWriter
+from tqdm.auto import tqdm
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
-    MinigridMemoryUniformDataset,
-    MinigridDataset, MinigridMemoryFullDataset,
-    MinigridDynamicObsUniformDataset)
-
+    MinigridDataset, MinigridDynamicObsUniformDataset,
+    MinigridMemoryFullDataset, MinigridMemoryUniformDataset)
 
 torch.manual_seed(0)
+# torch.autograd.set_detect_anomaly(True)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 save_folder_name = "save"
+torch_folder_name = "save/torch"
 if not os.path.exists(save_folder_name):
     os.makedirs(save_folder_name)
+if not os.path.exists(torch_folder_name):
+    os.makedirs(torch_folder_name)
 
 
 def saveModelWithParams(autoencoder, log_name, filename_date, params):
-    save_path = (
-        save_folder_name + "/" +
+    torch_save_path = (
+        save_folder_name + "/torch" +
         log_name + "_" + filename_date)
     json_save_path = (
         save_folder_name + "/json/" +
         log_name + "_" + filename_date)
-    params['save_path'] = save_path
+    params['save_path'] = torch_save_path
     torch.save(
-        autoencoder, save_path + ".torch")
+        autoencoder, torch_save_path + ".torch")
     with open(json_save_path + ".json", 'w') as params_file:
         params_file.write(json.dumps(params))
 
@@ -52,7 +51,8 @@ def train_ae_binary(
         "./logs/"+log_name+"/"+filename_date + "/",
         filename_suffix='FC_NN_Last')
 
-    mae_loss_func = nn.L1Loss()
+    # loss_func = nn.L1Loss()
+    loss_func = nn.BCELoss()
 
     for epoch in tqdm(range(epochs)):
         # Train
@@ -62,7 +62,7 @@ def train_ae_binary(
             opt.zero_grad(set_to_none=True)
             x_hat, x_latent = autoencoder(x)
             loss = (
-                mae_loss_func(x, x_hat) +
+                loss_func(x_hat, x) +
                 params['lambda']*(torch.minimum(
                     (x_latent)**2,
                     (1-x_latent)**2
@@ -106,15 +106,24 @@ def train_ae_binary(
                 x = x.to(device)
                 x_hat, x_latent = autoencoder(x)
                 loss = (
-                    (((x-x_hat)**2).sum(dim=(1, 2, 3))/(
-                        params['in_channels'] *
-                        params['input_dims'] *
-                        params['input_dims'])) +
+                    loss_func(x_hat, x) +
                     params['lambda']*(torch.minimum(
                         (x_latent)**2,
                         (1-x_latent)**2
-                        ).sum(dim=1)/params['latent_dims'])
-                    ).sum(dim=0)/(params['batch_size']*(1+params['lambda']))
+                        ).sum()/(
+                            params['batch_size'] *
+                            params['latent_dims']))
+                    ) / (1+params['lambda'])
+                # loss = (
+                #     (((x-x_hat)**2).sum(dim=(1, 2, 3))/(
+                #         params['in_channels'] *
+                #         params['input_dims'] *
+                #         params['input_dims'])) +
+                #     params['lambda']*(torch.minimum(
+                #         (x_latent)**2,
+                #         (1-x_latent)**2
+                #         ).sum(dim=1)/params['latent_dims'])
+                #     ).sum(dim=0)/(params['batch_size']*(1+params['lambda']))
                 # Dividing by 1+ lambda since we are also
                 # normalizing the second term
                 total_test_loss += loss.item()
@@ -141,7 +150,8 @@ def train_ae(
         "./logs/"+log_name+"/"+filename_date + "/",
         filename_suffix='FC_NN_Last')
 
-    mae_loss_func = nn.L1Loss()
+    # loss_func = nn.L1Loss()
+    loss_func = nn.BCELoss()
 
     for epoch in tqdm(range(epochs)):
         # Train
@@ -150,7 +160,7 @@ def train_ae(
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
             x_hat, _ = autoencoder(x)
-            loss = mae_loss_func(x, x_hat)
+            loss = loss_func(x_hat, x)
             # loss = ((x - x_hat)**2).sum() / (
             #         params['in_channels'] *
             #         params['input_dims'] *
@@ -174,11 +184,12 @@ def train_ae(
             for batch_idx, (x, y) in enumerate(test_dataset):
                 x = x.to(device)
                 x_hat, _ = autoencoder(x)
-                loss = ((x - x_hat)**2).sum() / (
-                    params['in_channels'] *
-                    params['input_dims'] *
-                    params['input_dims'] *
-                    params['batch_size'])
+                loss = loss_func(x_hat, x)
+                # loss = ((x - x_hat)**2).sum() / (
+                #     params['in_channels'] *
+                #     params['input_dims'] *
+                #     params['input_dims'] *
+                #     params['batch_size'])
                 total_test_loss += loss.item()
 
         writer.add_scalar(
@@ -203,7 +214,8 @@ def train_vae(
         "./logs/"+log_name+"/"+filename_date + "/",
         filename_suffix='FC_NN_Last')
 
-    mae_loss_func = nn.L1Loss()
+    # loss_func = nn.L1Loss()
+    loss_func = nn.BCELoss()
 
     for epoch in tqdm(range(epochs)):
         # Train
@@ -212,7 +224,7 @@ def train_vae(
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
             x_hat, _ = autoencoder(x)
-            loss = mae_loss_func(x, x_hat) + autoencoder.module.encoder.kl
+            loss = loss_func(x_hat, x) + autoencoder.module.encoder.kl
             # loss = ((x - x_hat)**2).sum() / (
             #     params['in_channels'] *
             #     params['input_dims'] *
@@ -238,12 +250,14 @@ def train_vae(
                 x = x.to(device)
                 opt.zero_grad()
                 x_hat, _ = autoencoder(x)
-                loss = ((x - x_hat)**2).sum() / (
-                    params['in_channels'] *
-                    params['input_dims'] *
-                    params['input_dims'] *
-                    params['batch_size']
-                    ) + autoencoder.module.encoder.kl
+                loss = (
+                    loss_func(x_hat, x) + autoencoder.module.encoder.kl)
+                # loss = ((x - x_hat)**2).sum() / (
+                #     params['in_channels'] *
+                #     params['input_dims'] *
+                #     params['input_dims'] *
+                #     params['batch_size']
+                #     ) + autoencoder.module.encoder.kl
                 total_test_loss += loss.item()
 
         writer.add_scalar(
