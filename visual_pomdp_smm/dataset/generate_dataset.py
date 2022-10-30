@@ -1,5 +1,5 @@
-from gym_minigrid.wrappers import RGBImgObsWrapper
-import gym
+from minigrid.wrappers import RGBImgObsWrapper
+import gymnasium as gym
 import os
 from PIL import Image
 

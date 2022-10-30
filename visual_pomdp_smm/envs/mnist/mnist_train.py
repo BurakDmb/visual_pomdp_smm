@@ -3,10 +3,10 @@ import torchvision
 import matplotlib.pyplot as plt
 import os
 
-from visual_pomdp_smm.minigrid_utils import Autoencoder,\
-    VariationalAutoencoder
 
-from visual_pomdp_smm.minigrid_train import train_ae, train_vae
+from pomdp_tmaze_baselines.utils.AE import Autoencoder, VariationalAutoencoder
+
+from visual_pomdp_smm.training.train_utils import train_ae, train_vae
 
 plt.rcParams['figure.dpi'] = 200
 torch.manual_seed(0)

@@ -1,8 +1,11 @@
-from gym_minigrid.window import Window
-from PIL import Image
 import os
-import gym
-from gym_minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
+
+# import gymnasium as gym
+from minigrid.utils.window import Window
+from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
+from PIL import Image
+from minigrid.envs import DynamicObstaclesEnv
+# import numpy as np
 
 
 def redraw(obs):
@@ -41,12 +44,13 @@ def key_handler(event):
 
 
 def step(action):
-    obs, reward, done, info = env.step(action)
+    obs, reward, terminated, truncated, info = env.step(action)
+    print(env.env.env.agent_pos, env.env.env.agent_dir)
     print('step=%s, reward=%.2f' % (env.step_count, reward))
 
-    if done:
+    if terminated or truncated:
         print('done!')
-        obs = env.reset()
+        obs, info = env.reset()
     redraw(obs)
     if SAVEFIG:
         window.fig.savefig(
@@ -55,18 +59,26 @@ def step(action):
     env.count += 1
 
 
-tile_size = 32
+tile_size = 48
 window = Window("gym_minigrid - MiniGrid-Empty-Random-5x5-v0")
 window.reg_key_handler(key_handler)
 
-env = gym.make('MiniGrid-MemoryS13-v0')
+# env = gym.make('MiniGrid-MemoryS13-v0')
+grid_size = 13
+
+env = DynamicObstaclesEnv(
+    size=grid_size, n_obstacles=0, agent_view_size=5)
 env = RGBImgPartialObsWrapper(env)
 env = ImgObsWrapper(env)
 PARTIALOBS = True
 SAVEFIG = False
 
-obs = env.reset()
+obs, info = env.reset()
+env.env.env.agent_pos = (1, 1)
+env.env.env.agent_dir = 0
+obs = env.observation(env.env.observation(env.env.env.gen_obs()))
 redraw(obs)
+print(env.agent_pos)
 env.count = 0
 if not os.path.isdir("manual_images"):
     os.makedirs("manual_images/")

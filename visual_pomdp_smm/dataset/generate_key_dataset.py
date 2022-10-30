@@ -1,6 +1,6 @@
 # from gym_minigrid.wrappers import RGBImgObsWrapper
-from gym_minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
-import gym
+from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
+import gymnasium as gym
 import os
 from PIL import Image
 from tqdm.auto import tqdm
