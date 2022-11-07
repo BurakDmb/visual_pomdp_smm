@@ -6,15 +6,17 @@ from PIL import Image
 from tqdm.auto import tqdm
 
 # Total sample number is 230400
-tile_size = 21
+tile_size = 9
 sample_per_episode = (tile_size-2)*(tile_size-2)*4 - 4
 epi_number = int(230400/sample_per_episode)
 k = tile_size//2
+
+# Fixed, Could not be changed
 agent_view_size = 5
 
 
-def main():
-
+def generate_all_possible_states():
+    assert agent_view_size == 5
     # Defining all traversable states for memory env.
     # Total of: (tile_size-2)*(tile_size-2)*4 - 4
     states = []
@@ -68,6 +70,13 @@ def main():
     states_eval.append((tile_size-2, tile_size-3, 2))
 
     states_noteval = [x for x in states if x not in states_eval]
+
+    return states, states_eval, states_noteval
+
+
+def main():
+
+    states, states_eval, states_noteval = generate_all_possible_states()
 
     env = DynamicObstaclesEnv(
         size=tile_size, n_obstacles=tile_size*2,

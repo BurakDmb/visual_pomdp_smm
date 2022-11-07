@@ -8,7 +8,7 @@ params_ae = {
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 16,
-    'batch_size': 512,
+    'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -31,7 +31,7 @@ params_vae = {
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 16,
-    'batch_size': 512,
+    'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -55,7 +55,7 @@ params_conv_ae = {
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 16,
-    'batch_size': 512,
+    'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -78,7 +78,7 @@ params_conv_vae = {
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 16,
-    'batch_size': 512,
+    'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -101,7 +101,7 @@ params_conv_binary_ae = {
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 16,
-    'batch_size': 512,
+    'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
     'in_channels': 3,
@@ -118,5 +118,4 @@ params_conv_binary_ae = {
 
 params_list = [
     params_ae, params_vae,
-    params_conv_ae, params_conv_vae,
-    params_conv_binary_ae]
+    params_conv_ae, params_conv_vae]

@@ -27,7 +27,7 @@ if not os.path.exists(torch_folder_name):
 
 def saveModelWithParams(autoencoder, log_name, filename_date, params):
     torch_save_path = (
-        save_folder_name + "/torch" +
+        save_folder_name + "/torch/" +
         log_name + "_" + filename_date)
     json_save_path = (
         save_folder_name + "/json/" +
@@ -51,8 +51,8 @@ def train_ae_binary(
         "./logs/"+log_name+"/"+filename_date + "/",
         filename_suffix='FC_NN_Last')
 
-    # loss_func = nn.L1Loss()
-    loss_func = nn.BCELoss()
+    loss_func = nn.L1Loss()
+    # loss_func = nn.BCELoss()
 
     for epoch in tqdm(range(epochs)):
         # Train
@@ -105,15 +105,16 @@ def train_ae_binary(
             for batch_idx, (x, y) in enumerate(test_dataset):
                 x = x.to(device)
                 x_hat, x_latent = autoencoder(x)
-                loss = (
-                    loss_func(x_hat, x) +
-                    params['lambda']*(torch.minimum(
-                        (x_latent)**2,
-                        (1-x_latent)**2
-                        ).sum()/(
-                            params['batch_size'] *
-                            params['latent_dims']))
-                    ) / (1+params['lambda'])
+                loss = loss_func(x_hat, x)
+                # loss = (
+                #     loss_func(x_hat, x) +
+                #     params['lambda']*(torch.minimum(
+                #         (x_latent)**2,
+                #         (1-x_latent)**2
+                #         ).sum()/(
+                #             params['batch_size'] *
+                #             params['latent_dims']))
+                #     ) / (1+params['lambda'])
                 # loss = (
                 #     (((x-x_hat)**2).sum(dim=(1, 2, 3))/(
                 #         params['in_channels'] *
@@ -150,8 +151,8 @@ def train_ae(
         "./logs/"+log_name+"/"+filename_date + "/",
         filename_suffix='FC_NN_Last')
 
-    # loss_func = nn.L1Loss()
-    loss_func = nn.BCELoss()
+    loss_func = nn.L1Loss()
+    # loss_func = nn.BCELoss()
 
     for epoch in tqdm(range(epochs)):
         # Train
@@ -214,8 +215,8 @@ def train_vae(
         "./logs/"+log_name+"/"+filename_date + "/",
         filename_suffix='FC_NN_Last')
 
-    # loss_func = nn.L1Loss()
-    loss_func = nn.BCELoss()
+    loss_func = nn.L1Loss()
+    # loss_func = nn.BCELoss()
 
     for epoch in tqdm(range(epochs)):
         # Train
@@ -250,8 +251,9 @@ def train_vae(
                 x = x.to(device)
                 opt.zero_grad()
                 x_hat, _ = autoencoder(x)
-                loss = (
-                    loss_func(x_hat, x) + autoencoder.module.encoder.kl)
+                loss = loss_func(x_hat, x)
+                # loss = (
+                #     loss_func(x_hat, x) + autoencoder.module.encoder.kl)
                 # loss = ((x - x_hat)**2).sum() / (
                 #     params['in_channels'] *
                 #     params['input_dims'] *

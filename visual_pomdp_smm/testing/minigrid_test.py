@@ -9,6 +9,9 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from tqdm.auto import tqdm
+import pandas as pd
+from tensorboard.backend.event_processing.event_accumulator\
+    import EventAccumulator
 
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
     MinigridDataset, MinigridMemoryUniformDatasetEval,
@@ -119,6 +122,8 @@ def test_function(
     resultsDictMain = {}
     prev_image_size = None
     prev_train_set_ratio = None
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+    fig2, ax2 = plt.subplots(nrows=1, ncols=1)
     for prefix_name in prefixes:
 
         prefixed = [filename for filename in dirFiles
@@ -287,10 +292,68 @@ def test_function(
                         .replace(".json", "")
                         + ".png")
 
+                    path = (
+                        "logs/" + prefix_name + "/" +
+                        filename.replace(prefix_name+"_", "").
+                        replace(".json", ""))
+                    df = tbLogToPandas(path)
+
+                    xlabel = "Epoch"
+                    ylabel = "Loss"
+                    title = "Average Test Loss Per Epoch"
+
+                    test_df = df.loc[
+                            df['metric'] == "AvgLossPerEpoch/test"
+                        ]["value"].rename(
+                            prefix_name)
+                    train_df = df.loc[
+                            df['metric'] == "AvgLossPerEpoch/train"
+                        ]["value"].rename(
+                            prefix_name)
+
+                    test_df.plot(
+                        ax=ax1, legend=True, title=title,
+                        xlabel=xlabel, ylabel=ylabel)
+                    train_df.plot(
+                        ax=ax2, legend=True, title=title,
+                        xlabel=xlabel, ylabel=ylabel)
+
             resultsDictMain[prefix_name] = resultsDict
             prev_image_size = params['input_dims']
             prev_train_set_ratio = params['train_set_ratio']
+
+    if save_figures:
+        fig1.tight_layout(pad=0.3)
+        fig1.savefig(
+            'save/Experiment_Figure_Test' +
+            os.path.commonprefix(prefixes)+'.png')
+
+        fig2.tight_layout(pad=0.3)
+        fig2.savefig(
+            'save/Experiment_Figure_Train' +
+            os.path.commonprefix(prefixes)+'.png')
     return resultsDictMain
+
+
+# Extraction function
+def tbLogToPandas(path):
+    runlog_data = pd.DataFrame({"metric": [], "value": [], "step": []})
+    try:
+        event_acc = EventAccumulator(path)
+        event_acc.Reload()
+        tags = event_acc.Tags()["scalars"]
+        for tag in tags:
+            event_list = event_acc.Scalars(tag)
+            values = list(map(lambda x: x.value, event_list))
+            step = list(map(lambda x: x.step, event_list))
+            r = {"metric": [tag] * len(step), "value": values, "step": step}
+            r = pd.DataFrame(r)
+            runlog_data = pd.concat([runlog_data, r])
+    # Dirty catch of DataLossError
+    except Exception:
+        print("Event file possibly corrupt: {}".format(path))
+        exit(1)
+    return runlog_data
 
 
 def scatterDatasetLatent(latentArray):

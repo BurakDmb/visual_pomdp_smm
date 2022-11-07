@@ -12,8 +12,7 @@ epi_number = int(230400/sample_per_episode)
 k = tile_size//2
 
 
-def main():
-
+def generate_all_possible_states():
     # Defining all traversable states for memory env.
     # Total of: ((tile_size-2) + 5)*4
     states = []
@@ -64,6 +63,13 @@ def main():
     states_eval.append((tile_size-2, k, 3))
 
     states_noteval = [x for x in states if x not in states_eval]
+
+    return states, states_eval, states_noteval
+
+
+def main():
+
+    states, states_eval, states_noteval = generate_all_possible_states()
 
     env = MemoryEnv(size=tile_size, agent_view_size=5)
 
