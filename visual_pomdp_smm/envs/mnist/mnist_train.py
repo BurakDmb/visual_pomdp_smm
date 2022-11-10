@@ -9,7 +9,7 @@ from pomdp_tmaze_baselines.utils.AE import Autoencoder, VariationalAutoencoder
 from visual_pomdp_smm.training.train_utils import train_ae, train_vae
 
 plt.rcParams['figure.dpi'] = 200
-torch.manual_seed(0)
+# torch.manual_seed(0)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 save_folder_name = "save"
 if not os.path.exists(save_folder_name):

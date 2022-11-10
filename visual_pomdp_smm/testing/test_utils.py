@@ -25,8 +25,8 @@ from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
 # plt.rcParams['figure.dpi'] = 200
 # matplotlib.use('GTK3Agg')
 
-torch.manual_seed(0)
-random.seed(None)
+# torch.manual_seed(0)
+# random.seed(None)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -59,22 +59,6 @@ def test_model(
 
     return total_test_loss, total_sample_number,\
         latentArray, test_losses, lossesArray
-
-
-# TODO: Needs re-training.
-def test_minigrid_memory_binary_ae(random_visualize=False):
-    test_function(
-        'MinigridMemoryFullDataset', 'MinigridMemoryKeyDataset',
-        prefix_name_inputs='minigrid_memory_binary_AE_2022',
-        random_visualize=random_visualize)
-
-
-# TODO: Needs re-training.
-def test_minigrid_memory_ae(random_visualize=False):
-    test_function(
-        'MinigridMemoryFullDataset', 'MinigridMemoryKeyDataset',
-        prefix_name_inputs='minigrid_memory_AE_2022',
-        random_visualize=random_visualize)
 
 
 def test_function(
@@ -375,12 +359,12 @@ def scatterDatasetLatent(latentArray):
     # im_scatter.save("latent.png")
 
 
-if __name__ == "__main__":
-    test_minigrid_memory_binary_ae(random_visualize=False)
-    # test_minigrid_memory_ae(random_visualize=False)
+# if __name__ == "__main__":
+#     test_minigrid_memory_binary_ae(random_visualize=False)
+#     # test_minigrid_memory_ae(random_visualize=False)
 
-    # from visual_pomdp_smm.minigrid_params import params_list
-    # for params in params_list:
-    #     test_minigrid_memory_ae(params, random_visualize=True)
-    #     # test_minigrid_ae(params, random_visualize=True)
-    #     # test_minigrid_vae(params, random_visualize=True)
+#     # from visual_pomdp_smm.minigrid_params import params_list
+#     # for params in params_list:
+#     #     test_minigrid_memory_ae(params, random_visualize=True)
+#     #     # test_minigrid_ae(params, random_visualize=True)
+#     #     # test_minigrid_vae(params, random_visualize=True)

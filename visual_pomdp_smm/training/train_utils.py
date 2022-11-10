@@ -14,9 +14,9 @@ from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
     MinigridDataset, MinigridDynamicObsUniformDataset,
     MinigridMemoryFullDataset, MinigridMemoryUniformDataset)
 
-torch.manual_seed(0)
+# torch.manual_seed(0)
 # torch.autograd.set_detect_anomaly(True)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 save_folder_name = "save"
 torch_folder_name = "save/torch"
 if not os.path.exists(save_folder_name):
@@ -40,7 +40,7 @@ def saveModelWithParams(autoencoder, log_name, filename_date, params):
 
 
 def train_ae_binary(
-        autoencoder, train_dataset, test_dataset, params,
+        autoencoder, train_dataset, test_dataset, params, device,
         epochs=20, log_name="AE"):
     opt = torch.optim.AdamW(
         autoencoder.parameters(), lr=params['learning_rate'])
@@ -140,7 +140,7 @@ def train_ae_binary(
 
 
 def train_ae(
-        autoencoder, train_dataset, test_dataset, params,
+        autoencoder, train_dataset, test_dataset, params, device,
         epochs=20, log_name="AE"):
     opt = torch.optim.AdamW(
         autoencoder.parameters(), lr=params['learning_rate'])
@@ -204,7 +204,7 @@ def train_ae(
 
 
 def train_vae(
-        autoencoder, train_dataset, test_dataset, params,
+        autoencoder, train_dataset, test_dataset, params, device,
         epochs=20, log_name="VAE"):
     opt = torch.optim.AdamW(
         autoencoder.parameters(), lr=params['learning_rate'])
@@ -273,6 +273,9 @@ def train_vae(
 
 
 def start_training(params):
+    torch.cuda.set_device(params['gpu_id'])
+    device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
+
     train_class_str = params['train_class']
     if train_class_str == 'train_ae':
         train_func = train_ae
@@ -306,7 +309,7 @@ def start_training(params):
         dataset_class = MinigridDynamicObsUniformDataset
     elif dataset_class_str == 'MinigridDataset':
         dataset_class = MinigridDataset
-    elif dataset_class_str == 'MinigridMemoryKeySplittedDataset':
+    elif dataset_class_str == 'MinigridMemoryFullDataset':
         dataset_class = MinigridMemoryFullDataset
     else:
         print("Wrong dataset class string passed, ending execution.")
@@ -329,8 +332,8 @@ def start_training(params):
         test_data, batch_size=params['batch_size'], shuffle=True,
         num_workers=0, pin_memory=True)
 
-    autoencoder = ae_class(**params)
+    autoencoder = ae_class(**params).to(device)
     autoencoder = nn.DataParallel(autoencoder).to(device)
     autoencoder = train_func(
-        autoencoder, train_dataset, test_dataset, params,
+        autoencoder, train_dataset, test_dataset, params, device,
         epochs=params['epochs'], log_name=params['log_name'])

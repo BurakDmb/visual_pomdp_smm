@@ -4,14 +4,14 @@ import os
 from visual_pomdp_smm.testing.test_utils import test_function
 
 resultsDict = test_function(
-    test_dataset_class_str="MinigridMemoryUniformDatasetNoteval",
-    eval_dataset_class_str="MinigridMemoryUniformDatasetEval",
+    test_dataset_class_str='MinigridMemoryFullDataset',
+    eval_dataset_class_str='MinigridMemoryKeyDataset',
     prefix_name_inputs=[
-        'minigrid_uniform_memory_ae',
-        'minigrid_uniform_memory_vae',
-        'minigrid_uniform_memory_conv_ae',
-        'minigrid_uniform_memory_conv_vae',
-        'minigrid_uniform_memory_conv_binary_ae'],
+        'minigrid_memory_AE_256',
+        'minigrid_memory_AE_128',
+        'minigrid_memory_AE_64',
+        'minigrid_memory_AE_32',
+        'minigrid_memory_AE_16'],
     save_figures=True
 )
 

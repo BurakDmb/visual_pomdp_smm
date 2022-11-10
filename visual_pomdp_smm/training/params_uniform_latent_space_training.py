@@ -21,6 +21,7 @@ params_memory_ae8 = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_memory_ae32 = {
@@ -44,6 +45,7 @@ params_memory_ae32 = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_memory_ae256 = {
@@ -67,6 +69,7 @@ params_memory_ae256 = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 params_dynamicobs_ae8 = {
     'ae_class': 'Autoencoder',
@@ -89,6 +92,7 @@ params_dynamicobs_ae8 = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_dynamicobs_ae32 = {
@@ -112,6 +116,7 @@ params_dynamicobs_ae32 = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_dynamicobs_ae256 = {
@@ -135,6 +140,7 @@ params_dynamicobs_ae256 = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 

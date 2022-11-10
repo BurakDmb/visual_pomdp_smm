@@ -1,7 +1,7 @@
 import json
 import os
 
-from visual_pomdp_smm.testing.minigrid_test import test_function
+from visual_pomdp_smm.testing.test_utils import test_function
 
 resultsDict = test_function(
     test_dataset_class_str="MinigridDynamicObsUniformDatasetNoteval",

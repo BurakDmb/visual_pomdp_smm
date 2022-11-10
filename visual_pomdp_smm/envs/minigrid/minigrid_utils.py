@@ -7,12 +7,12 @@ import torchvision
 
 from pathlib import Path
 # import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
-plt.rcParams['figure.dpi'] = 200
-torch.manual_seed(0)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# plt.rcParams['figure.dpi'] = 200
+# torch.manual_seed(0)
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class MinigridDataset(torch.utils.data.Dataset):

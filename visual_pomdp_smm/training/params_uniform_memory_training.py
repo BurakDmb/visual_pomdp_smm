@@ -21,6 +21,7 @@ params_ae = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_vae = {
@@ -44,6 +45,7 @@ params_vae = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 
@@ -68,6 +70,7 @@ params_conv_ae = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_conv_vae = {
@@ -91,6 +94,7 @@ params_conv_vae = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_conv_binary_ae = {
@@ -114,6 +118,7 @@ params_conv_binary_ae = {
     'conv1_stride': 1,
     'maxpool_stride': 1,
     'lambda': 0.1,
+    'gpu_id': 0,
 }
 
 params_list = [

@@ -1,4 +1,4 @@
-from visual_pomdp_smm.testing.minigrid_test import tbLogToPandas
+from visual_pomdp_smm.testing.test_utils import tbLogToPandas
 import matplotlib.pyplot as plt
 import os
 
