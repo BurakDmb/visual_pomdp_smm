@@ -40,8 +40,8 @@ def test_model(
     lossesArray = []
     autoencoder.eval()
 
-    # loss_func = nn.L1Loss(reduction='none')
-    loss_func = nn.BCELoss(reduction='none')
+    loss_func = nn.L1Loss(reduction='none')
+    # loss_func = nn.BCELoss(reduction='none')
 
     with torch.no_grad():
         # for x, y in test_dataset:
@@ -64,7 +64,7 @@ def test_model(
 def test_function(
         test_dataset_class_str, eval_dataset_class_str,
         prefix_name_inputs, random_visualize=False, save_figures=False,
-        verbose=False):
+        verbose=False, include_all_experiments=False):
 
     if test_dataset_class_str == 'MinigridMemoryFullDataset':
         test_dataset_class = MinigridMemoryFullDataset
@@ -108,14 +108,28 @@ def test_function(
     prev_train_set_ratio = None
     fig1, ax1 = plt.subplots(nrows=1, ncols=1)
     fig2, ax2 = plt.subplots(nrows=1, ncols=1)
-    for prefix_name in prefixes:
+    for prefix_name in tqdm(prefixes):
 
         prefixed = [filename for filename in dirFiles
                     if filename.startswith(prefix_name)]
 
         prefixed.sort(reverse=True)
-        prefixed = [prefixed[0]]
-        for filename in prefixed:
+        if not include_all_experiments:
+            prefixed = [prefixed[0]]
+            current_full_prefix = [prefix_name]
+            # TODO: Not completed, after_prefix missing.
+            # filename.replace(prefix_name+"_", "")
+        else:
+            current_full_prefix = [
+                prefix_name + "_" +
+                prefix.split(prefix_name+"_", 1)[1].split('_', 1)[0]
+                for prefix in prefixed]
+
+            after_prefix = [
+                prefix.split(prefix_name+"_", 1)[1].split('_', 1)[1]
+                for prefix in prefixed]
+
+        for i, filename in enumerate(prefixed):
             with open("save/json/"+filename, 'r') as params_file:
                 params = json.loads(params_file.read())
             model_file_name = params['save_path']
@@ -124,34 +138,37 @@ def test_function(
             resultsDict = {}
 
             with torch.no_grad():
-                ae = torch.load(model_file_name+".torch").to(device)
-                ae = ae.module
+                ae = torch.load(
+                    model_file_name+".torch", map_location='cuda:0').to(device)
+                if hasattr(ae, 'module'):
+                    ae = ae.module
                 ae.eval()
 
                 if not (prev_image_size is not None
                         and prev_image_size == params['input_dims']
                         and prev_train_set_ratio is not None
                         and prev_train_set_ratio == params['train_set_ratio']):
+                    print("Creating dataset")
 
                     test_data = test_dataset_class(
                         "data/", "test",
                         image_size=params['input_dims'],
                         train_set_ratio=params['train_set_ratio'],
-                        use_cache=False)
+                        use_cache=True)
 
                     test_dataset = torch.utils.data.DataLoader(
-                        test_data, batch_size=128, shuffle=True,
-                        num_workers=0, pin_memory=True)
+                        test_data, batch_size=16800, shuffle=False,
+                        num_workers=4, pin_memory=True)
 
                     eval_class_data = eval_dataset_class(
                         "data/", "",
                         image_size=params['input_dims'],
                         train_set_ratio=params['train_set_ratio'],
-                        use_cache=False)
+                        use_cache=True)
 
                     eval_class_dataset = torch.utils.data.DataLoader(
-                        eval_class_data, batch_size=128, shuffle=True,
-                        num_workers=0, pin_memory=True)
+                        eval_class_data, batch_size=16800, shuffle=False,
+                        num_workers=4, pin_memory=True)
 
                     random_data = test_data[
                         random.randint(0, len(test_data))]
@@ -276,11 +293,14 @@ def test_function(
                         .replace(".json", "")
                         + ".png")
 
-                    path = (
-                        "logs/" + prefix_name + "/" +
-                        filename.replace(prefix_name+"_", "").
-                        replace(".json", ""))
-                    df = tbLogToPandas(path)
+                    # path = (
+                    #     "logs/" + prefix_name + "/" +
+                    #     filename.replace(prefix_name+"_", "").
+                    #     replace(".json", ""))
+
+                    df = tbLogToPandas(
+                        "logs/"+current_full_prefix[i] + "/" +
+                        after_prefix[i].replace(".json", ""))
 
                     xlabel = "Epoch"
                     ylabel = "Loss"
@@ -302,7 +322,7 @@ def test_function(
                         ax=ax2, legend=True, title=title,
                         xlabel=xlabel, ylabel=ylabel)
 
-            resultsDictMain[prefix_name] = resultsDict
+            resultsDictMain[current_full_prefix[i]] = resultsDict
             prev_image_size = params['input_dims']
             prev_train_set_ratio = params['train_set_ratio']
 
@@ -334,8 +354,9 @@ def tbLogToPandas(path):
             r = pd.DataFrame(r)
             runlog_data = pd.concat([runlog_data, r])
     # Dirty catch of DataLossError
-    except Exception:
+    except Exception as e:
         print("Event file possibly corrupt: {}".format(path))
+        print("Exception message:\n", e)
         exit(1)
     return runlog_data
 
