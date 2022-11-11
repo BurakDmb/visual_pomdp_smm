@@ -11,13 +11,14 @@ import torch
 
 
 NUM_GPUS = torch.cuda.device_count()
-PROC_PER_GPU = 2
-N = 10
+PROC_PER_GPU = 8
+N = 12
 
 
 def mp_pool_function(param, queue):
     gpu_id = queue.get()
     try:
+        param['gpu_id'] = gpu_id
         print(
             "Experiment log_name=" + param['log_name'] +
             " (gpu_id=" + str(gpu_id) + ") started.")
@@ -25,6 +26,8 @@ def mp_pool_function(param, queue):
         print(
             "Experiment log_name=" + param['log_name'] +
             " (gpu_id=" + str(gpu_id) + ") finished.")
+    except Exception as e:
+        print(e)
     finally:
         queue.put(gpu_id)
 

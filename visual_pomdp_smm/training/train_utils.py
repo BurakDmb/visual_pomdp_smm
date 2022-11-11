@@ -333,7 +333,7 @@ def start_training(params):
         num_workers=0, pin_memory=True)
 
     autoencoder = ae_class(**params).to(device)
-    autoencoder = nn.DataParallel(autoencoder).to(device)
+    # autoencoder = nn.DataParallel(autoencoder).to(device)
     autoencoder = train_func(
         autoencoder, train_dataset, test_dataset, params, device,
         epochs=params['epochs'], log_name=params['log_name'])
