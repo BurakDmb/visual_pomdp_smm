@@ -1,8 +1,10 @@
 import json
 import os
 from datetime import datetime
+from itertools import repeat
 
 import torch
+import torch.multiprocessing as mp
 import torch.nn as nn
 from pomdp_tmaze_baselines.utils.AE import (Autoencoder, ConvAutoencoder,
                                             ConvBinaryAutoencoder,
@@ -10,6 +12,7 @@ from pomdp_tmaze_baselines.utils.AE import (Autoencoder, ConvAutoencoder,
                                             VariationalAutoencoder)
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
+
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
     MinigridDataset, MinigridDynamicObsUniformDataset,
     MinigridMemoryFullDataset, MinigridMemoryUniformDataset)
@@ -19,10 +22,13 @@ from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
 
 save_folder_name = "save"
 torch_folder_name = "save/torch"
+json_folder_name = "save/json"
 if not os.path.exists(save_folder_name):
     os.makedirs(save_folder_name)
 if not os.path.exists(torch_folder_name):
     os.makedirs(torch_folder_name)
+if not os.path.exists(json_folder_name):
+    os.makedirs(json_folder_name)
 
 
 def saveModelWithParams(autoencoder, log_name, filename_date, params):
@@ -225,7 +231,10 @@ def train_vae(
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
             x_hat, _ = autoencoder(x)
-            loss = loss_func(x_hat, x) + autoencoder.module.encoder.kl
+            if hasattr(autoencoder, 'module'):
+                loss = loss_func(x_hat, x) + autoencoder.module.encoder.kl
+            else:
+                loss = loss_func(x_hat, x) + autoencoder.encoder.kl
             # loss = ((x - x_hat)**2).sum() / (
             #     params['in_channels'] *
             #     params['input_dims'] *
@@ -337,3 +346,54 @@ def start_training(params):
     autoencoder = train_func(
         autoencoder, train_dataset, test_dataset, params, device,
         epochs=params['epochs'], log_name=params['log_name'])
+
+
+def mp_pool_function(param, queue):
+    gpu_id = queue.get()
+    try:
+        param['gpu_id'] = gpu_id
+        print(
+            "Experiment log_name=" + param['log_name'] +
+            " (gpu_id=" + str(gpu_id) + ") started.")
+        start_training(param)
+        print(
+            "Experiment log_name=" + param['log_name'] +
+            " (gpu_id=" + str(gpu_id) + ") finished.")
+    except Exception as e:
+        print(e)
+    finally:
+        queue.put(gpu_id)
+
+
+def mp_create_experiment_params(params_list, N):
+    # Creating experiment parameter sets,
+    # while assining each with an unique id.
+    experiment_params = []
+    for param in params_list:
+        for i in range(N):
+            param_ = param.copy()
+            param_['log_name'] = param_['log_name'] + '_' + str(i)
+            experiment_params.append(param_)
+    return experiment_params
+
+
+# For The GPU Job Distribution, stackoverflow has been used.
+# https://stackoverflow.com/questions/53422761/distributing-jobs-evenly-across-multiple-gpus-with-multiprocessing-pool
+def start_multi_training(params_list, NUM_GPUS, PROC_PER_GPU, N):
+    mp.set_start_method('spawn', force=True)
+    manager = mp.Manager()
+    queue = manager.Queue()
+    experiment_params = mp_create_experiment_params(params_list, N)
+
+    # Initialize the queue with the GPU ids
+    for gpu_ids in range(NUM_GPUS):
+        for _ in range(PROC_PER_GPU):
+            queue.put(gpu_ids)
+
+    pool = mp.Pool(processes=PROC_PER_GPU * NUM_GPUS)
+
+    for _ in pool.starmap(mp_pool_function, zip(
+            experiment_params, repeat(queue))):
+        pass
+    pool.close()
+    pool.join()

@@ -4,7 +4,7 @@ params_minigrid_ae_256 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
     'dataset_class': 'MinigridMemoryFullDataset',
-    'log_name': 'minigrid_AE',
+    'log_name': 'minigrid_AE_256',
     'latent_dims': 256,
     'input_dims': 48,
     'hidden_size': 16,
