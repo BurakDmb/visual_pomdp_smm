@@ -14,8 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
-    MinigridDataset, MinigridDynamicObsUniformDataset,
-    MinigridMemoryFullDataset, MinigridMemoryUniformDataset)
+    MinigridGenericDataset)
 
 # torch.manual_seed(0)
 # torch.autograd.set_detect_anomaly(True)
@@ -311,28 +310,18 @@ def start_training(params):
         print("Wrong ae class string passed, ending execution.")
         exit(1)
 
-    dataset_class_str = params['dataset_class']
-    if dataset_class_str == 'MinigridMemoryUniformDataset':
-        dataset_class = MinigridMemoryUniformDataset
-    elif dataset_class_str == 'MinigridDynamicObsUniformDataset':
-        dataset_class = MinigridDynamicObsUniformDataset
-    elif dataset_class_str == 'MinigridDataset':
-        dataset_class = MinigridDataset
-    elif dataset_class_str == 'MinigridMemoryFullDataset':
-        dataset_class = MinigridMemoryFullDataset
-    else:
-        print("Wrong dataset class string passed, ending execution.")
-        exit(1)
-
+ 
     # input_dims, hidden_size, batch_size,
     # epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
 
-    train_data = dataset_class(
+    train_data = MinigridGenericDataset(
         "data/", "train", image_size=params['input_dims'],
-        train_set_ratio=params['train_set_ratio'], use_cache=True)
-    test_data = dataset_class(
+        train_set_ratio=params['train_set_ratio'],
+        dataset_folder_name=params['dataset_folder_name'], use_cache=True)
+    test_data = MinigridGenericDataset(
         "data/", "test", image_size=params['input_dims'],
-        train_set_ratio=params['train_set_ratio'], use_cache=True)
+        train_set_ratio=params['train_set_ratio'],
+        dataset_folder_name=params['dataset_folder_name'], use_cache=True)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=params['batch_size'], shuffle=True,

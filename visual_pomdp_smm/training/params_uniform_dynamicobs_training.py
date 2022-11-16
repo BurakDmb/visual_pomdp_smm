@@ -3,7 +3,7 @@
 params_ae = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_dynamicobs_ae',
     'latent_dims': 256,
     'input_dims': 48,
@@ -27,7 +27,7 @@ params_ae = {
 params_vae = {
     'ae_class': 'VariationalAutoencoder',
     'train_class': 'train_vae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_dynamicobs_vae',
     'latent_dims': 256,
     'input_dims': 48,
@@ -52,7 +52,7 @@ params_vae = {
 params_conv_ae = {
     'ae_class': 'ConvAutoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_dynamicobs_conv_ae',
     'latent_dims': 256,
     'input_dims': 48,
@@ -76,7 +76,7 @@ params_conv_ae = {
 params_conv_vae = {
     'ae_class': 'ConvVariationalAutoencoder',
     'train_class': 'train_vae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_dynamicobs_conv_vae',
     'latent_dims': 256,
     'input_dims': 48,
@@ -100,7 +100,7 @@ params_conv_vae = {
 params_conv_binary_ae = {
     'ae_class': 'ConvBinaryAutoencoder',
     'train_class': 'train_ae_binary',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_dynamicobs_conv_binary_ae',
     'latent_dims': 256,
     'input_dims': 48,

@@ -3,7 +3,7 @@
 params_ae = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridMemoryUniformDataset',
+    'dataset_folder_name': 'UniformMemory',
     'log_name': 'minigrid_uniform_memory_ae',
     'latent_dims': 256,
     'input_dims': 48,
@@ -27,7 +27,7 @@ params_ae = {
 params_vae = {
     'ae_class': 'VariationalAutoencoder',
     'train_class': 'train_vae',
-    'dataset_class': 'MinigridMemoryUniformDataset',
+    'dataset_folder_name': 'UniformMemory',
     'log_name': 'minigrid_uniform_memory_vae',
     'latent_dims': 256,
     'input_dims': 48,

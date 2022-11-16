@@ -4,8 +4,6 @@ import os
 from visual_pomdp_smm.testing.test_utils import test_function
 
 resultsDict = test_function(
-    test_dataset_class_str="MinigridDynamicObsUniformDatasetNoteval",
-    eval_dataset_class_str="MinigridDynamicObsUniformDatasetEval",
     prefix_name_inputs=[
         'minigrid_uniform_dynamicobs_ae',
         'minigrid_uniform_dynamicobs_vae',

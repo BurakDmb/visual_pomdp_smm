@@ -14,13 +14,8 @@ from tensorboard.backend.event_processing.event_accumulator\
     import EventAccumulator
 
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
-    MinigridDataset, MinigridMemoryUniformDatasetEval,
-    MinigridMemoryFullDataset, MinigridMemoryKeyDataset,
-    MinigridMemoryUniformDataset,
-    MinigridMemoryUniformDatasetNoteval,
-    MinigridDynamicObsUniformDataset,
-    MinigridDynamicObsUniformDatasetNoteval,
-    MinigridDynamicObsUniformDatasetEval)
+    MinigridGenericDatasetNoteval,
+    MinigridGenericDatasetEval)
 
 # plt.rcParams['figure.dpi'] = 200
 # matplotlib.use('GTK3Agg')
@@ -62,40 +57,8 @@ def test_model(
 
 
 def test_function(
-        test_dataset_class_str, eval_dataset_class_str,
         prefix_name_inputs, random_visualize=False, save_figures=False,
         verbose=False, include_all_experiments=False):
-
-    if test_dataset_class_str == 'MinigridMemoryFullDataset':
-        test_dataset_class = MinigridMemoryFullDataset
-    elif test_dataset_class_str == 'MinigridMemoryUniformDataset':
-        test_dataset_class = MinigridMemoryUniformDataset
-    elif test_dataset_class_str == 'MinigridMemoryUniformDatasetNoteval':
-        test_dataset_class = MinigridMemoryUniformDatasetNoteval
-    elif test_dataset_class_str == 'MinigridDynamicObsUniformDataset':
-        test_dataset_class = MinigridDynamicObsUniformDataset
-    elif test_dataset_class_str == 'MinigridDynamicObsUniformDatasetNoteval':
-        test_dataset_class = MinigridDynamicObsUniformDatasetNoteval
-    elif test_dataset_class_str == 'MinigridDataset':
-        test_dataset_class = MinigridDataset
-    else:
-        print(
-            "Invalid test dataset class string, " +
-            "ending execution of the program.")
-        exit(1)
-    if eval_dataset_class_str == 'MinigridMemoryKeyDataset':
-        eval_dataset_class = MinigridMemoryKeyDataset
-    elif eval_dataset_class_str == 'MinigridMemoryUniformDatasetEval':
-        eval_dataset_class = MinigridMemoryUniformDatasetEval
-    elif eval_dataset_class_str == 'MinigridDynamicObsUniformDatasetEval':
-        eval_dataset_class = MinigridDynamicObsUniformDatasetEval
-    elif eval_dataset_class_str == 'MinigridDataset':
-        eval_dataset_class = MinigridDataset
-    else:
-        print(
-            "Invalid eval dataset class string, " +
-            "ending execution of the program.")
-        exit(1)
 
     dirFiles = os.listdir('save/json')
     if type(prefix_name_inputs) is not list:
@@ -150,20 +113,22 @@ def test_function(
                         and prev_train_set_ratio == params['train_set_ratio']):
                     print("Creating dataset")
 
-                    test_data = test_dataset_class(
+                    test_data = MinigridGenericDatasetNoteval(
                         "data/", "test",
                         image_size=params['input_dims'],
                         train_set_ratio=params['train_set_ratio'],
+                        dataset_folder_name=params['dataset_folder_name'],
                         use_cache=True)
 
                     test_dataset = torch.utils.data.DataLoader(
                         test_data, batch_size=16800, shuffle=False,
                         num_workers=4, pin_memory=True)
 
-                    eval_class_data = eval_dataset_class(
+                    eval_class_data = MinigridGenericDatasetEval(
                         "data/", "",
                         image_size=params['input_dims'],
                         train_set_ratio=params['train_set_ratio'],
+                        dataset_folder_name=params['dataset_folder_name'],
                         use_cache=True)
 
                     eval_class_dataset = torch.utils.data.DataLoader(

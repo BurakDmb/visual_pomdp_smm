@@ -3,7 +3,7 @@
 params_memory_ae8 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridMemoryUniformDataset',
+    'dataset_folder_name': 'UniformMemory',
     'log_name': 'minigrid_uniform_latentspace_memory_8',
     'latent_dims': 8,
     'input_dims': 48,
@@ -27,7 +27,7 @@ params_memory_ae8 = {
 params_memory_ae32 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridMemoryUniformDataset',
+    'dataset_folder_name': 'UniformMemory',
     'log_name': 'minigrid_uniform_latentspace_memory_32',
     'latent_dims': 32,
     'input_dims': 48,
@@ -51,7 +51,7 @@ params_memory_ae32 = {
 params_memory_ae256 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridMemoryUniformDataset',
+    'dataset_folder_name': 'UniformMemory',
     'log_name': 'minigrid_uniform_latentspace_memory_256',
     'latent_dims': 256,
     'input_dims': 48,
@@ -74,7 +74,7 @@ params_memory_ae256 = {
 params_dynamicobs_ae8 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_latentspace_dynamicobs_8',
     'latent_dims': 8,
     'input_dims': 48,
@@ -98,7 +98,7 @@ params_dynamicobs_ae8 = {
 params_dynamicobs_ae32 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_latentspace_dynamicobs_32',
     'latent_dims': 32,
     'input_dims': 48,
@@ -122,7 +122,7 @@ params_dynamicobs_ae32 = {
 params_dynamicobs_ae256 = {
     'ae_class': 'Autoencoder',
     'train_class': 'train_ae',
-    'dataset_class': 'MinigridDynamicObsUniformDataset',
+    'dataset_folder_name': 'UniformDynamicObs',
     'log_name': 'minigrid_uniform_latentspace_dynamicobs_256',
     'latent_dims': 256,
     'input_dims': 48,
