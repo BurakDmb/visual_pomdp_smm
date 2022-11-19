@@ -7,7 +7,7 @@ params_ae = {
     'log_name': 'minigrid_uniform_dynamicobs_ae',
     'latent_dims': 256,
     'input_dims': 48,
-    'hidden_size': 16,
+    'hidden_size': 128,
     'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
@@ -31,7 +31,7 @@ params_vae = {
     'log_name': 'minigrid_uniform_dynamicobs_vae',
     'latent_dims': 256,
     'input_dims': 48,
-    'hidden_size': 16,
+    'hidden_size': 128,
     'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
@@ -56,7 +56,7 @@ params_conv_ae = {
     'log_name': 'minigrid_uniform_dynamicobs_conv_ae',
     'latent_dims': 256,
     'input_dims': 48,
-    'hidden_size': 16,
+    'hidden_size': 128,
     'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
@@ -80,7 +80,7 @@ params_conv_vae = {
     'log_name': 'minigrid_uniform_dynamicobs_conv_vae',
     'latent_dims': 256,
     'input_dims': 48,
-    'hidden_size': 16,
+    'hidden_size': 128,
     'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
@@ -104,7 +104,7 @@ params_conv_binary_ae = {
     'log_name': 'minigrid_uniform_dynamicobs_conv_binary_ae',
     'latent_dims': 256,
     'input_dims': 48,
-    'hidden_size': 16,
+    'hidden_size': 128,
     'batch_size': 2048,
     'epochs': 500,
     'train_set_ratio': 0.8,
@@ -121,6 +121,10 @@ params_conv_binary_ae = {
     'gpu_id': 0,
 }
 
-params_list = [
+params_list_128 = [
+    params_ae, params_vae,
+    params_conv_ae, params_conv_vae]
+
+params_list_16 = [
     params_ae, params_vae,
     params_conv_ae, params_conv_vae]

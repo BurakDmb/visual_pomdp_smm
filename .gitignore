@@ -6,3 +6,5 @@ logs/**
 save/**
 **.pyc
 **.egg-info/**
+logs**/**
+save**/**

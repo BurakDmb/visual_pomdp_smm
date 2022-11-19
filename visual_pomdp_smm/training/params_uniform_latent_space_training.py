@@ -144,8 +144,8 @@ params_dynamicobs_ae256 = {
 }
 
 
-# params_list = [
-#     params_memory_ae8, params_memory_ae32, params_memory_ae256]
+params_list_memory = [
+    params_memory_ae8, params_memory_ae32, params_memory_ae256]
 
-params_list = [
+params_list_dynamicobs = [
     params_dynamicobs_ae8, params_dynamicobs_ae32, params_dynamicobs_ae256]

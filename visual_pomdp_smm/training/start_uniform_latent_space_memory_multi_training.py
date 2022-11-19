@@ -4,7 +4,7 @@ import torch
 
 if __name__ == '__main__':
     from visual_pomdp_smm.training.params_uniform_latent_space_training\
-        import params_list
+        import params_list_memory as params_list
     NUM_GPUS = torch.cuda.device_count()
     PROC_PER_GPU = 8
     N = 12
