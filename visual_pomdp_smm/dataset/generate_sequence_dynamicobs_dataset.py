@@ -116,10 +116,9 @@ def main():
                     observations.append(
                         generate_obs(env, state))
                 concat_observations = np.hstack(observations)
-            all_states_list[i] = concat_observations
-            noteval_states_list[noteval_i] = concat_observations
-
-            noteval_i += 1
+                all_states_list[i] = concat_observations
+                noteval_states_list[noteval_i] = concat_observations
+                noteval_i += 1
 
     all_states_list.flush()
     eval_states_list.flush()
