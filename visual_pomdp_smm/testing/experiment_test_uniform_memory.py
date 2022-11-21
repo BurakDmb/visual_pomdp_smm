@@ -9,7 +9,8 @@ resultsDict = test_function(
         'minigrid_uniform_memory_vae',
         'minigrid_uniform_memory_conv_ae',
         'minigrid_uniform_memory_conv_vae',
-        'minigrid_uniform_memory_conv_binary_ae'],
+        # 'minigrid_uniform_memory_conv_binary_ae'
+        ],
     save_figures=True
 )
 

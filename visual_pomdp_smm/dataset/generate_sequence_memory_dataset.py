@@ -1,3 +1,4 @@
+import json
 import os
 from itertools import permutations
 
@@ -5,8 +6,8 @@ import numpy as np
 from minigrid.core.world_object import Ball, Key
 from minigrid.envs import MemoryEnv
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
-from PIL import Image
 from tqdm.auto import tqdm
+
 from visual_pomdp_smm.dataset.generate_uniform_memory_dataset import (
     generate_all_possible_states, tile_size)
 
@@ -36,6 +37,7 @@ def main():
         os.makedirs("data/SequenceMemory/")
 
     assert (seq_len > 1)
+    print("Started generating all possible states")
 
     states, states_eval, states_noteval = generate_all_possible_states()
     generated_permutations = list(permutations(states, seq_len))
@@ -44,10 +46,12 @@ def main():
     # eval_permutations = []
     # noteval_permutations = []
     eval_label = []
+    eval_counter = 0
     for perm in generated_permutations:
         if any(x in perm for x in states_eval):
             # eval_permutations.append(perm)
             eval_label.append(True)
+            eval_counter += 1
         else:
             # noteval_permutations.append(perm)
             eval_label.append(False)
@@ -57,9 +61,49 @@ def main():
     env = ImgObsWrapper(env)
     _, _ = env.reset()
 
+    dataset_dict = {}
+    len_total_states = len(generated_permutations)
+    len_states_eval = eval_counter
+    len_states_noteval = len(generated_permutations) - eval_counter
+
+    concat_obs_shape = env.env.observation_space.spaces["image"].shape
+    concat_obs_shape = (
+        concat_obs_shape[0],
+        concat_obs_shape[1]*seq_len,
+        concat_obs_shape[2])
+
+    # The number 4 comes from the 4 combination of key-door.
+    all_states_list = np.memmap(
+        'data/SequenceMemory/sample_all.npy',
+        dtype='uint8', mode='write',
+        shape=(
+            4*len_total_states,
+            *concat_obs_shape))
+    dataset_dict['all_states_shape'] = all_states_list.shape
+
+    eval_states_list = np.memmap(
+        'data/SequenceMemory/sample_eval.npy',
+        dtype='uint8', mode='write',
+        shape=(
+            4*len_states_eval,
+            *concat_obs_shape))
+    dataset_dict['eval_states_shape'] = eval_states_list.shape
+
+    noteval_states_list = np.memmap(
+        'data/SequenceMemory/sample_noteval.npy',
+        dtype='uint8', mode='write',
+        shape=(
+            4*len_states_noteval,
+            *concat_obs_shape))
+    dataset_dict['noteval_states_shape'] = noteval_states_list.shape
+
+    print(
+        "Dataset will take of ammount: ",
+        all_states_list.size*all_states_list.itemsize/(1024*1024), " MB")
+
+    eval_i = 0
+    noteval_i = 0
     for i, perm in enumerate(tqdm(generated_permutations)):
-        image_label_string = "sample_eval" if eval_label[i]\
-            else "sample_noteval"
 
         # For each key and door combination (total of 4)
         # 0: Start:Key, Doors: Ball-Key
@@ -74,11 +118,7 @@ def main():
                     start_room_obj,
                     hallway_end, other_objs))
 
-        concat_observations = np.hstack(observations)
-        im = Image.fromarray(concat_observations)
-        im.save(
-            "data/SequenceMemory/" + image_label_string +
-            str(4*i + 0)+".png")
+        concat_observations0 = np.hstack(observations)
 
         # 1: Start:Key, Doors: Key-Ball
         observations = []
@@ -92,11 +132,7 @@ def main():
                     start_room_obj,
                     hallway_end, other_objs))
 
-        concat_observations = np.hstack(observations)
-        im = Image.fromarray(concat_observations)
-        im.save(
-            "data/SequenceMemory/" + image_label_string +
-            str(4*i + 1)+".png")
+        concat_observations1 = np.hstack(observations)
 
         # 2: Start:Ball, Doors: Ball-Key
         observations = []
@@ -110,11 +146,7 @@ def main():
                     start_room_obj,
                     hallway_end, other_objs))
 
-        concat_observations = np.hstack(observations)
-        im = Image.fromarray(concat_observations)
-        im.save(
-            "data/SequenceMemory/" + image_label_string +
-            str(4*i + 2)+".png")
+        concat_observations2 = np.hstack(observations)
 
         # 3: Start:Ball, Doors: Key-Ball
         observations = []
@@ -128,11 +160,34 @@ def main():
                     start_room_obj,
                     hallway_end, other_objs))
 
-        concat_observations = np.hstack(observations)
-        im = Image.fromarray(concat_observations)
-        im.save(
-            "data/SequenceMemory/" + image_label_string +
-            str(4*i + 3)+".png")
+        concat_observations3 = np.hstack(observations)
+
+        if eval_label[i]:
+            all_states_list[4*i+0] = concat_observations0
+            all_states_list[4*i+1] = concat_observations1
+            all_states_list[4*i+2] = concat_observations2
+            all_states_list[4*i+3] = concat_observations3
+            eval_states_list[4*eval_i+0] = concat_observations0
+            eval_states_list[4*eval_i+1] = concat_observations1
+            eval_states_list[4*eval_i+2] = concat_observations2
+            eval_states_list[4*eval_i+3] = concat_observations3
+            eval_i += 1
+        else:
+            all_states_list[4*i+0] = concat_observations0
+            all_states_list[4*i+1] = concat_observations1
+            all_states_list[4*i+2] = concat_observations2
+            all_states_list[4*i+3] = concat_observations3
+            noteval_states_list[4*noteval_i+0] = concat_observations0
+            noteval_states_list[4*noteval_i+1] = concat_observations1
+            noteval_states_list[4*noteval_i+2] = concat_observations2
+            noteval_states_list[4*noteval_i+3] = concat_observations3
+            noteval_i += 1
+
+    all_states_list.flush()
+    eval_states_list.flush()
+    noteval_states_list.flush()
+    json.dump(dataset_dict, open(
+        "data/SequenceMemory/dataset_dict.json", 'w'))
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
+import json
 import os
 
+import numpy as np
 from minigrid.envs import MemoryEnv
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
-from PIL import Image
 from tqdm.auto import tqdm
 
 # Total sample number is 230400
@@ -82,36 +83,60 @@ def main():
     if not os.path.isdir("data/UniformMemory/"):
         os.makedirs("data/UniformMemory/")
 
-    # Count the random object prob. Commented out, only for debug purposes.
-    # counter = 0
+    dataset_dict = {}
+    len_total_states = len(states)
+    len_states_eval = len(states_eval)
+    len_states_noteval = len(states_noteval)
+
+    all_states_list = np.memmap(
+        'data/UniformMemory/sample_all.npy',
+        dtype='uint8', mode='write',
+        shape=(
+            len_total_states * epi_number,
+            *env.env.observation_space.spaces["image"].shape))
+    dataset_dict['all_states_shape'] = all_states_list.shape
+
+    eval_states_list = np.memmap(
+        'data/UniformMemory/sample_eval.npy',
+        dtype='uint8', mode='write',
+        shape=(
+            len_states_eval * epi_number,
+            *env.env.observation_space.spaces["image"].shape))
+    dataset_dict['eval_states_shape'] = eval_states_list.shape
+
+    noteval_states_list = np.memmap(
+        'data/UniformMemory/sample_noteval.npy',
+        dtype='uint8', mode='write',
+        shape=(
+            len_states_noteval * epi_number,
+            *env.env.observation_space.spaces["image"].shape))
+    dataset_dict['noteval_states_shape'] = noteval_states_list.shape
+
     for epi in tqdm(range(epi_number)):
         obs, info = env.reset()
         i = 0
 
-        # Count the random object prob. Commented out, only for debug purposes.
-        # if env.success_pos == (tile_size-2, k+1):
-        #     counter += 1
+        for j, state in enumerate(states_eval):
+            env.env.env.agent_pos = (state[0], state[1])
+            env.env.env.agent_dir = state[2]
+            obs = env.observation(env.env.observation(env.env.env.gen_obs()))
+            all_states_list[len_total_states * epi + i] = obs
+            eval_states_list[len_states_eval * epi + j] = obs
+            i += 1
 
-        for state in states_eval:
+        for j, state in enumerate(states_noteval):
             env.env.env.agent_pos = (state[0], state[1])
             env.env.env.agent_dir = state[2]
             obs = env.observation(env.env.observation(env.env.env.gen_obs()))
-            im = Image.fromarray(obs)
-            im.save(
-                "data/UniformMemory/sample_eval" +
-                str(epi*len(states)+i)+".png")
+            all_states_list[len_total_states * epi + i] = obs
+            noteval_states_list[len_states_noteval * epi + j] = obs
             i += 1
-        for state in states_noteval:
-            env.env.env.agent_pos = (state[0], state[1])
-            env.env.env.agent_dir = state[2]
-            obs = env.observation(env.env.observation(env.env.env.gen_obs()))
-            im = Image.fromarray(obs)
-            im.save(
-                "data/UniformMemory/sample_noteval" +
-                str(epi*len(states)+i)+".png")
-            i += 1
-    # Count the random object prob. Commented out, only for debug purposes.
-    # print("Random object prob." + str(counter/epi_number))
+
+    all_states_list.flush()
+    eval_states_list.flush()
+    noteval_states_list.flush()
+    json.dump(dataset_dict, open(
+        "data/UniformMemory/dataset_dict.json", 'w'))
 
 
 if __name__ == "__main__":
