@@ -310,7 +310,6 @@ def start_training(params):
         print("Wrong ae class string passed, ending execution.")
         exit(1)
 
- 
     # input_dims, hidden_size, batch_size,
     # epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
 
@@ -324,11 +323,11 @@ def start_training(params):
         dataset_folder_name=params['dataset_folder_name'], use_cache=True)
 
     train_dataset = torch.utils.data.DataLoader(
-        train_data, batch_size=params['batch_size'], shuffle=True,
-        num_workers=0, pin_memory=True)
+        train_data, batch_size=params['batch_size'], shuffle=False,
+        num_workers=1, pin_memory=True)
     test_dataset = torch.utils.data.DataLoader(
-        test_data, batch_size=params['batch_size'], shuffle=True,
-        num_workers=0, pin_memory=True)
+        test_data, batch_size=params['batch_size'], shuffle=False,
+        num_workers=1, pin_memory=True)
 
     autoencoder = ae_class(**params).to(device)
     # autoencoder = nn.DataParallel(autoencoder).to(device)
@@ -369,7 +368,7 @@ def mp_create_experiment_params(params_list, N):
 # For The GPU Job Distribution, stackoverflow has been used.
 # https://stackoverflow.com/questions/53422761/distributing-jobs-evenly-across-multiple-gpus-with-multiprocessing-pool
 def start_multi_training(params_list, NUM_GPUS, PROC_PER_GPU, N):
-    mp.set_start_method('spawn', force=True)
+    mp.set_start_method('forkserver', force=True)
     manager = mp.Manager()
     queue = manager.Queue()
     experiment_params = mp_create_experiment_params(params_list, N)
