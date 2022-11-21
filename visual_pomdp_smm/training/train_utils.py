@@ -159,10 +159,10 @@ def train_ae(
     loss_func = nn.L1Loss()
     # loss_func = nn.BCELoss()
 
-    for epoch in tqdm(range(epochs)):
+    for epoch in (range(epochs)):
         # Train
         total_training_loss = 0
-        for batch_idx, (x, y) in enumerate(train_dataset):
+        for batch_idx, (x, y) in enumerate(tqdm(train_dataset)):
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
             x_hat, _ = autoencoder(x)
@@ -328,10 +328,10 @@ def start_training(params):
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=params['batch_size'], shuffle=False,
-        num_workers=0, pin_memory=False)
+        num_workers=0, pin_memory=False, persistent_workers=False)
     test_dataset = torch.utils.data.DataLoader(
         test_data, batch_size=params['batch_size'], shuffle=False,
-        num_workers=0, pin_memory=False)
+        num_workers=0, pin_memory=False, persistent_workers=False)
 
     autoencoder = ae_class(**params).to(device)
     # autoencoder = nn.DataParallel(autoencoder).to(device)
@@ -372,7 +372,7 @@ def mp_create_experiment_params(params_list, N):
 # For The GPU Job Distribution, stackoverflow has been used.
 # https://stackoverflow.com/questions/53422761/distributing-jobs-evenly-across-multiple-gpus-with-multiprocessing-pool
 def start_multi_training(params_list, NUM_GPUS, PROC_PER_GPU, N):
-    mp.set_start_method('forkserver', force=True)
+    mp.set_start_method('spawn', force=True)
     manager = mp.Manager()
     queue = manager.Queue()
     experiment_params = mp_create_experiment_params(params_list, N)
