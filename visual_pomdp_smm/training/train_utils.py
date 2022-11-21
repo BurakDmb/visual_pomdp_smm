@@ -159,10 +159,10 @@ def train_ae(
     loss_func = nn.L1Loss()
     # loss_func = nn.BCELoss()
 
-    for epoch in (range(epochs)):
+    for epoch in tqdm(range(epochs)):
         # Train
         total_training_loss = 0
-        for batch_idx, (x, y) in enumerate(tqdm(train_dataset)):
+        for batch_idx, (x, y) in enumerate(train_dataset):
             x = x.to(device)
             opt.zero_grad(set_to_none=True)
             x_hat, _ = autoencoder(x)
