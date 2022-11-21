@@ -81,8 +81,8 @@ def train_ae_binary(
             # loss = (
             #     (((x-x_hat)**2).sum(dim=(1, 2, 3))/(
             #         params['in_channels'] *
-            #         params['input_dims'] *
-            #         params['input_dims'])) +
+            #         params['input_dims_h'] *
+            #         params['input_dims_w'])) +
             #     params['lambda']*(torch.minimum(
             #         (x_latent)**2,
             #         (1-x_latent)**2
@@ -123,8 +123,8 @@ def train_ae_binary(
                 # loss = (
                 #     (((x-x_hat)**2).sum(dim=(1, 2, 3))/(
                 #         params['in_channels'] *
-                #         params['input_dims'] *
-                #         params['input_dims'])) +
+                #         params['input_dims_h'] *
+                #         params['input_dims_w'])) +
                 #     params['lambda']*(torch.minimum(
                 #         (x_latent)**2,
                 #         (1-x_latent)**2
@@ -169,8 +169,8 @@ def train_ae(
             loss = loss_func(x_hat, x)
             # loss = ((x - x_hat)**2).sum() / (
             #         params['in_channels'] *
-            #         params['input_dims'] *
-            #         params['input_dims'] *
+            #         params['input_dims_h'] *
+            #         params['input_dims_w'] *
             #         params['batch_size'])
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -193,8 +193,8 @@ def train_ae(
                 loss = loss_func(x_hat, x)
                 # loss = ((x - x_hat)**2).sum() / (
                 #     params['in_channels'] *
-                #     params['input_dims'] *
-                #     params['input_dims'] *
+                #     params['input_dims_h'] *
+                #     params['input_dims_w'] *
                 #     params['batch_size'])
                 total_test_loss += loss.item()
 
@@ -236,8 +236,8 @@ def train_vae(
                 loss = loss_func(x_hat, x) + autoencoder.encoder.kl
             # loss = ((x - x_hat)**2).sum() / (
             #     params['in_channels'] *
-            #     params['input_dims'] *
-            #     params['input_dims'] *
+            #     params['input_dims_h'] *
+            #     params['input_dims_w'] *
             #     params['batch_size']
             #     ) + autoencoder.module.encoder.kl
             loss.backward()
@@ -264,8 +264,8 @@ def train_vae(
                 #     loss_func(x_hat, x) + autoencoder.module.encoder.kl)
                 # loss = ((x - x_hat)**2).sum() / (
                 #     params['in_channels'] *
-                #     params['input_dims'] *
-                #     params['input_dims'] *
+                #     params['input_dims_h'] *
+                #     params['input_dims_w'] *
                 #     params['batch_size']
                 #     ) + autoencoder.module.encoder.kl
                 total_test_loss += loss.item()
@@ -314,20 +314,24 @@ def start_training(params):
     # epochs, train_set_ratio, in_channels, learning_rate, maximum_gradient
 
     train_data = MinigridGenericDataset(
-        "data/", "train", image_size=params['input_dims'],
+        "data/", "train",
+        image_size_h=params['input_dims_h'],
+        image_size_w=params['input_dims_w'],
         train_set_ratio=params['train_set_ratio'],
         dataset_folder_name=params['dataset_folder_name'], use_cache=True)
     test_data = MinigridGenericDataset(
-        "data/", "test", image_size=params['input_dims'],
+        "data/", "test",
+        image_size_h=params['input_dims_h'],
+        image_size_w=params['input_dims_w'],
         train_set_ratio=params['train_set_ratio'],
         dataset_folder_name=params['dataset_folder_name'], use_cache=True)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=params['batch_size'], shuffle=False,
-        num_workers=1, pin_memory=True)
+        num_workers=0, pin_memory=False)
     test_dataset = torch.utils.data.DataLoader(
         test_data, batch_size=params['batch_size'], shuffle=False,
-        num_workers=1, pin_memory=True)
+        num_workers=0, pin_memory=False)
 
     autoencoder = ae_class(**params).to(device)
     # autoencoder = nn.DataParallel(autoencoder).to(device)

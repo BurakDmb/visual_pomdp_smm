@@ -20,7 +20,8 @@ import torchvision
 
 class MinigridGenericDataset(torch.utils.data.Dataset):
     def __init__(
-            self, data_path, split, image_size, train_set_ratio,
+            self, data_path, split, image_size_h, image_size_w,
+            train_set_ratio,
             dataset_folder_name, use_cache=False, **kwargs):
 
         self.data_dir = Path(data_path) / dataset_folder_name
@@ -29,7 +30,7 @@ class MinigridGenericDataset(torch.utils.data.Dataset):
 
         self.transforms = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Resize(image_size), ])
+            torchvision.transforms.Resize((image_size_h, image_size_w)), ])
 
         dataset_dict = json.load(open(self.data_dir/'dataset_dict.json', 'r'))
         if not dataset_dict:
@@ -134,18 +135,20 @@ class MinigridGenericOldDataset(torch.utils.data.Dataset):
 
 class MinigridGenericDatasetEval(MinigridGenericDataset):
     def __init__(
-            self, data_path, split, image_size, train_set_ratio,
+            self, data_path, split, image_size_h, image_size_w,
+            train_set_ratio,
             dataset_folder_name, use_cache=False, **kwargs):
         super(MinigridGenericDatasetEval, self).__init__(
-            data_path, "eval", image_size, train_set_ratio,
+            data_path, "eval", image_size_h, image_size_w, train_set_ratio,
             dataset_folder_name, use_cache=False, **kwargs)
 
 
 class MinigridGenericDatasetNoteval(
         MinigridGenericDataset):
     def __init__(
-            self, data_path, split, image_size, train_set_ratio,
+            self, data_path, split, image_size_h, image_size_w,
+            train_set_ratio,
             dataset_folder_name, use_cache=False, **kwargs):
         super(MinigridGenericDatasetNoteval, self).__init__(
-            data_path, "noteval", image_size, train_set_ratio,
+            data_path, "noteval", image_size_h, image_size_w, train_set_ratio,
             dataset_folder_name, use_cache=False, **kwargs)

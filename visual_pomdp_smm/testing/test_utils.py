@@ -108,14 +108,15 @@ def test_function(
                 ae.eval()
 
                 if not (prev_image_size is not None
-                        and prev_image_size == params['input_dims']
+                        and prev_image_size == params['input_dims_h']
                         and prev_train_set_ratio is not None
                         and prev_train_set_ratio == params['train_set_ratio']):
                     print("Creating dataset")
 
                     test_data = MinigridGenericDatasetNoteval(
                         "data/", "test",
-                        image_size=params['input_dims'],
+                        image_size_h=params['input_dims_h'],
+                        image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
                         use_cache=True)
@@ -126,7 +127,8 @@ def test_function(
 
                     eval_class_data = MinigridGenericDatasetEval(
                         "data/", "",
-                        image_size=params['input_dims'],
+                        image_size_h=params['input_dims_h'],
+                        image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
                         use_cache=True)
@@ -147,8 +149,8 @@ def test_function(
 
                 norm_test_losses = (
                     np.array(testLossesArray) / (
-                        params['input_dims'] *
-                        params['input_dims'] *
+                        params['input_dims_h'] *
+                        params['input_dims_w'] *
                         params['in_channels'])
                     )
                 resultsDict['test_avgloss'] = norm_test_losses.sum(
@@ -161,8 +163,8 @@ def test_function(
                         ae, eval_class_dataset)
                 norm_eval_losses = (
                     np.array(evalLossesArray) / (
-                        params['input_dims'] *
-                        params['input_dims'] *
+                        params['input_dims_h'] *
+                        params['input_dims_w'] *
                         params['in_channels'])
                     )
 
@@ -288,7 +290,7 @@ def test_function(
                         xlabel=xlabel, ylabel=ylabel)
 
             resultsDictMain[current_full_prefix[i]] = resultsDict
-            prev_image_size = params['input_dims']
+            prev_image_size = params['input_dims_h']
             prev_train_set_ratio = params['train_set_ratio']
 
     if save_figures:
