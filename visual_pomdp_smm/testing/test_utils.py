@@ -4,18 +4,18 @@ import random
 
 # import matplotlib
 import matplotlib.pyplot as plt
+import natsort
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from PIL import Image
+from tensorboard.backend.event_processing.event_accumulator import \
+    EventAccumulator
 from tqdm.auto import tqdm
-import pandas as pd
-from tensorboard.backend.event_processing.event_accumulator\
-    import EventAccumulator
 
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
-    MinigridGenericDatasetNoteval,
-    MinigridGenericDatasetEval)
+    MinigridGenericDatasetEval, MinigridGenericDatasetNoteval)
 
 # plt.rcParams['figure.dpi'] = 200
 # matplotlib.use('GTK3Agg')
@@ -308,6 +308,48 @@ def test_function(
             'save/Experiment_Figure_Train' +
             os.path.commonprefix(prefixes)+'.png')
     return resultsDictMain
+
+
+def calculate_std_table(filename):
+    with open(filename, "r") as infile:
+        json_dict = json.load(infile)
+
+        keys = list(json_dict.keys())
+        unique_keys = set([key.rsplit('_', 1)[0] for key in keys])
+        unique_keys = natsort.natsorted(unique_keys, reverse=False)
+        results_dict = {}
+
+        for unique_key in unique_keys:
+            key_dict = {
+                k: v for k, v in json_dict.items() if k.startswith(unique_key)}
+
+            results_dict[unique_key] = {}
+            results_dict[unique_key]['test_avgloss_mean'] = np.mean([
+                v['test_avgloss'] for k, v in key_dict.items()])
+            results_dict[unique_key]['test_avgloss_std'] = np.std([
+                v['test_avgloss'] for k, v in key_dict.items()])
+
+            results_dict[unique_key]['eval_avgloss_mean'] = np.mean([
+                v['eval_avgloss'] for k, v in key_dict.items()])
+            results_dict[unique_key]['eval_avgloss_std'] = np.std([
+                v['eval_avgloss'] for k, v in key_dict.items()])
+
+            results_dict[unique_key]['lossdiff_mean'] = np.mean([
+                v['lossdiff'] for k, v in key_dict.items()])
+            results_dict[unique_key]['lossdiff_std'] = np.std([
+                v['lossdiff'] for k, v in key_dict.items()])
+
+        print()
+        json_result_dict = json.dumps(results_dict, indent=2, default=str)
+        print(json_result_dict)
+
+        if not os.path.exists("save"):
+            os.makedirs("save")
+        # Writing to sample.json
+        with open(
+                filename.replace(".json", "")+"_Stochastic_Results.json",
+                "w") as outfile:
+            outfile.write(json_result_dict)
 
 
 # Extraction function

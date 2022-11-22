@@ -1,7 +1,8 @@
 import json
 import os
 
-from visual_pomdp_smm.testing.test_utils import test_function
+from visual_pomdp_smm.testing.test_utils import (
+    test_function, calculate_std_table)
 
 resultsDict = test_function(
     prefix_name_inputs=[
@@ -23,3 +24,6 @@ if not os.path.exists("save"):
 # Writing to sample.json
 with open("save/Experiment_Test_Sequnce_Dynamic_Obs.json", "w") as outfile:
     outfile.write(json_dict)
+
+
+calculate_std_table(filename='save/Experiment_Test_Sequnce_Dynamic_Obs.json')
