@@ -1,10 +1,12 @@
 import json
 import os
 
-from visual_pomdp_smm.testing.test_utils import (
-    test_function, calculate_std_table)
+import numpy as np
 
-resultsDict = test_function(
+from visual_pomdp_smm.testing.test_utils import (calculate_std_table,
+                                                 test_function)
+
+resultsDict, freq_vs_losses_dict = test_function(
     prefix_name_inputs=[
         'minigrid_memory_conv_binary_AE_16',
         'minigrid_memory_conv_binary_AE_32',
@@ -30,5 +32,8 @@ if not os.path.exists("save"):
 with open("save/Experiment_Compare_Latent_Memory.json", "w") as outfile:
     outfile.write(json_dict)
 
+np.save(
+    "save/Experiment_Compare_Latent_Memory_Freq_Vs_Losses_Dict.npy",
+    freq_vs_losses_dict)
 
 calculate_std_table(filename='save/Experiment_Compare_Latent_Memory.json')

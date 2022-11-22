@@ -15,7 +15,8 @@ from tensorboard.backend.event_processing.event_accumulator import \
 from tqdm.auto import tqdm
 
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
-    MinigridGenericDatasetEval, MinigridGenericDatasetNoteval)
+    MinigridGenericDataset, MinigridGenericDatasetEval,
+    MinigridGenericDatasetNoteval)
 
 # plt.rcParams['figure.dpi'] = 200
 # matplotlib.use('GTK3Agg')
@@ -35,7 +36,7 @@ def test_model(
     lossesArray = []
     autoencoder.eval()
 
-    loss_func = nn.L1Loss(reduction='none')
+    loss_func = nn.L1Loss(reduction="none")
     # loss_func = nn.BCELoss(reduction='none')
 
     with torch.no_grad():
@@ -58,7 +59,7 @@ def test_model(
 
 def test_function(
         prefix_name_inputs, random_visualize=False, save_figures=False,
-        verbose=False, include_all_experiments=False):
+        verbose=False, include_all_experiments=False, n_frequency=500):
 
     dirFiles = os.listdir('save/json')
     if type(prefix_name_inputs) is not list:
@@ -67,6 +68,7 @@ def test_function(
         prefixes = prefix_name_inputs
 
     resultsDictMain = {}
+    freq_vs_losses_dict_main = {}
     prev_image_size = None
     prev_train_set_ratio = None
     fig1, ax1 = plt.subplots(nrows=1, ncols=1)
@@ -99,6 +101,7 @@ def test_function(
             print("Testing for param path: " + params['save_path'])
 
             resultsDict = {}
+            freq_vs_losses_dict = {}
 
             with torch.no_grad():
                 ae = torch.load(
@@ -127,7 +130,7 @@ def test_function(
 
                     test_dataset = torch.utils.data.DataLoader(
                         test_data, batch_size=16800, shuffle=False,
-                        num_workers=4, pin_memory=True)
+                        num_workers=0, pin_memory=False)
 
                     eval_class_data = MinigridGenericDatasetEval(
                         "data/", "",
@@ -139,13 +142,67 @@ def test_function(
 
                     eval_class_dataset = torch.utils.data.DataLoader(
                         eval_class_data, batch_size=16800, shuffle=False,
-                        num_workers=4, pin_memory=True)
+                        num_workers=0, pin_memory=False)
 
                     random_data = test_data[
                         random.randint(0, len(test_data))]
                     random_eval_data = eval_class_data[
                         random.randint(0, len(eval_class_data))]
 
+                    all_data = MinigridGenericDataset(
+                        "data/", "test",
+                        image_size_h=params['input_dims_h'],
+                        image_size_w=params['input_dims_w'],
+                        train_set_ratio=params['train_set_ratio'],
+                        dataset_folder_name=params['dataset_folder_name'],
+                        use_cache=True)
+
+                    unique_values, indices, counts = np.unique(
+                        all_data.imgs, return_counts=True,
+                        return_index=True, axis=0)
+                    zipped_array = zip(counts, indices)
+                    sorted_zip_frequencies = sorted(
+                        zipped_array, reverse=True)[0:n_frequency]
+
+                    sorted_frequencies, sorted_indices = zip(
+                        *sorted_zip_frequencies)
+                    all_data.imgs = all_data.imgs[np.array(sorted_indices)]
+                    all_dataset = torch.utils.data.DataLoader(
+                        all_data, batch_size=len(sorted_frequencies),
+                        shuffle=False,
+                        num_workers=0, pin_memory=False)
+
+                    print("Finished creating dataset.")
+
+                # Calculating all dataset results.
+                top_n_eval_loss, top_n_sample_number, top_n_LatentArrays,\
+                    top_n_losses, top_n_LossesArray = test_model(
+                        ae, all_dataset)
+
+                normalized_top_n_losses_array = (
+                    np.array(top_n_LossesArray) / (
+                        params['input_dims_h'] *
+                        params['input_dims_w'] *
+                        params['in_channels'])
+                    )
+                # We should clip the values if its exceeds
+                # 10x larger than the minimum loss
+                normalized_top_n_losses_array_clip = np.clip(
+                    normalized_top_n_losses_array,
+                    normalized_top_n_losses_array.min(),
+                    normalized_top_n_losses_array.min()*10)
+                # freq_index_loss_zip = zip(
+                #     sorted_frequencies,
+                #     sorted_indices,
+                #     normalized_top_n_losses_array)
+                freq_vs_losses_dict['sorted_frequencies'] = sorted_frequencies
+                freq_vs_losses_dict['sorted_indices'] = sorted_indices
+                freq_vs_losses_dict['normalized_top_n_losses_array'] = \
+                    normalized_top_n_losses_array
+                freq_vs_losses_dict['normalized_top_n_losses_array_clip'] = \
+                    normalized_top_n_losses_array_clip
+
+                # Calculating noteval dataset results.
                 total_test_loss, test_sample_number, latentArrays,\
                     test_losses, testLossesArray = test_model(ae, test_dataset)
 
@@ -162,6 +219,7 @@ def test_function(
                 resultsDict['test_minloss'] = norm_test_losses.min()
                 resultsDict['test_maxloss'] = norm_test_losses.max()
 
+                # Calculating eval dataset results.
                 total_eval_loss, eval_sample_number, evalLatentArrays,\
                     eval_losses, evalLossesArray = test_model(
                         ae, eval_class_dataset)
@@ -294,20 +352,70 @@ def test_function(
                         xlabel=xlabel, ylabel=ylabel)
 
             resultsDictMain[current_full_prefix[i]] = resultsDict
+            freq_vs_losses_dict_main[current_full_prefix[i]] = \
+                freq_vs_losses_dict
             prev_image_size = params['input_dims_h']
             prev_train_set_ratio = params['train_set_ratio']
 
     if save_figures:
         fig1.tight_layout(pad=0.3)
         fig1.savefig(
-            'save/Experiment_Figure_Test' +
+            'save/Experiment_Figure_Test_' +
             os.path.commonprefix(prefixes)+'.png')
 
         fig2.tight_layout(pad=0.3)
         fig2.savefig(
-            'save/Experiment_Figure_Train' +
+            'save/Experiment_Figure_Train_' +
             os.path.commonprefix(prefixes)+'.png')
-    return resultsDictMain
+
+        # fig3.tight_layout(pad=0.3)
+        # fig3.savefig(
+        #     'save/Experiment_Figure_FreqVsLoss' +
+        #     os.path.commonprefix(prefixes)+'.png')
+
+        # fig4.tight_layout(pad=0.3)
+        # fig4.savefig(
+        #     'save/Experiment_Figure_FreqVsLoss_Clipped' +
+        #     os.path.commonprefix(prefixes)+'.png')
+    return resultsDictMain, freq_vs_losses_dict_main
+
+
+def _plotfreq(
+        filename, sorted_frequencies,
+        normalized_top_n_losses_array,
+        normalized_top_n_losses_array_clip):
+    # freq_vs_losses_dict_main = np.load(filename).item()
+    # https://stackoverflow.com/a/40220343/9151122
+
+    fig3, ax3 = plt.subplots(nrows=1, ncols=1, figsize=(16, 9))
+    fig4, ax4 = plt.subplots(nrows=1, ncols=1, figsize=(16, 9))
+    # Frequency Of Observations Vs Reconstruction Loss Figures.
+    # Fig3: Without clipping, Fig4: With Clipping
+    index_values = np.arange(0, len(sorted_frequencies), 1)
+    ax3_twin = ax3.twinx()
+    ax4_twin = ax4.twinx()
+
+    ax3.plot(
+        index_values, sorted_frequencies, 'g-')
+    ax3_twin.plot(
+        index_values,
+        normalized_top_n_losses_array, 'b-')
+
+    ax4.plot(
+        index_values, sorted_frequencies, 'g-')
+    ax4_twin.plot(
+        index_values,
+        normalized_top_n_losses_array_clip, 'b-')
+
+    ax3.set_xticks([])
+    ax3.set_xlabel('Observations')
+    ax3.set_ylabel('Frequency', color='g')
+    ax3_twin.set_ylabel('Reconstruction Error', color='b')
+
+    ax4.set_xticks([])
+    ax4.set_xlabel('Observations')
+    ax4.set_ylabel('Frequency', color='g')
+    ax4_twin.set_ylabel('Reconstruction Error', color='b')
 
 
 def calculate_std_table(filename):

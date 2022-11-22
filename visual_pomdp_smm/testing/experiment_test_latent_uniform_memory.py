@@ -1,10 +1,12 @@
 import json
 import os
 
+import numpy as np
+
 from visual_pomdp_smm.testing.test_utils import (
     test_function, calculate_std_table)
 
-resultsDict = test_function(
+resultsDict, freq_vs_losses_dict = test_function(
     prefix_name_inputs=[
         'minigrid_uniform_latentspace_memory_8',
         'minigrid_uniform_latentspace_memory_32',
@@ -24,6 +26,10 @@ with open(
         "save/Experiment_Test_Latent_Uniform_Memory.json",
         "w") as outfile:
     outfile.write(json_dict)
+
+np.save(
+    "save/Experiment_Test_Latent_Uniform_Memory_Freq_Vs_Losses_Dict.npy",
+    freq_vs_losses_dict)
 
 calculate_std_table(
     filename='save/Experiment_Test_Latent_Uniform_Memory.json')

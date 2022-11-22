@@ -76,7 +76,7 @@ def getSRperEpisodeFromDirectory(dpath, scalar_name="AvgLossPerEpoch/test"):
     return indexes, values, keys
 
 
-def savePlotSRWithCI(indexes, values, keys, save_name):
+def savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix):
     plt.rcParams.update({'font.size': 18})
     fig, ax = plt.subplots(figsize=(12, 9))
     ax.set_title("Average Test Loss Per Epoch")
@@ -88,7 +88,7 @@ def savePlotSRWithCI(indexes, values, keys, save_name):
     # keys = sorted(keys)
     keys = natsort.natsorted(keys, reverse=False)
     legend_keys = [
-        "Latent Dimension Size=" + key.rsplit('_', 1)[1] for key in keys]
+        legend_prefix + key.rsplit('_', 1)[1] for key in keys]
     for key in keys:
         indexesList = indexes[key]
         valuesList = values[key]
@@ -120,13 +120,15 @@ def savePlotSRWithCI(indexes, values, keys, save_name):
     fig.savefig(save_name, format="png")
 
 
-def main():
+def MemoryLatentComparison():
     path = 'save/csv/memory_conv_ae/'
     save_name = 'results/LatentComparison_Memory_Conv_AE.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
-    savePlotSRWithCI(indexes, values, keys, save_name)
+    savePlotSRWithCI(
+        indexes, values, keys, save_name,
+        legend_prefix="Latent Dimension Size=")
     print(save_name, " has been generated.")
 
     path = 'save/csv/memory_conv_binary/'
@@ -138,8 +140,197 @@ def main():
     print(save_name, " has been generated.")
 
     print("Completed all plots.")
-    pass
+
+
+def DynamicObsLatentComparison():
+    path = 'save/csv/dynamicobs_conv_ae/'
+    save_name = 'results/LatentComparison_DynamicObs_Conv_AE.png'
+
+    indexes, values, keys = getSRperEpisodeFromDirectory(path)
+    print("Read from file has been completed:", path)
+    savePlotSRWithCI(
+        indexes, values, keys, save_name,
+        legend_prefix="Latent Dimension Size=")
+    print(save_name, " has been generated.")
+
+    path = 'save/csv/dynamicobs_conv_binary/'
+    save_name = 'results/LatentComparison_DynamicObs_Conv_Binary_AE.png'
+
+    indexes, values, keys = getSRperEpisodeFromDirectory(path)
+    print("Read from file has been completed:", path)
+    savePlotSRWithCI(indexes, values, keys, save_name)
+    print(save_name, " has been generated.")
+
+    print("Completed all plots.")
+
+
+def UniformMemoryCompareTraining():
+    path = 'logs/'
+    save_name = 'results/UniformMemoryTrainingComparison.png'
+
+    indexes, values, keys = getSRperEpisodeFromDirectory(path)
+    print("Read from file has been completed:", path)
+    savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix="Method=")
+    print(save_name, " has been generated.")
+
+    print("Completed all plots.")
+
+
+def UniformDynamicObsCompareTraining():
+    path = 'logs/'
+    save_name = 'results/UniformDynamicObsTrainingComparison.png'
+
+    indexes, values, keys = getSRperEpisodeFromDirectory(path)
+    print("Read from file has been completed:", path)
+    savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix="Method=")
+    print(save_name, " has been generated.")
+
+    print("Completed all plots.")
+
+
+def SequenceMemoryCompareTraining():
+    path = 'logs/'
+    save_name = 'results/SequenceMemoryTrainingComparison.png'
+
+    indexes, values, keys = getSRperEpisodeFromDirectory(path)
+    print("Read from file has been completed:", path)
+    savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix="Method=")
+    print(save_name, " has been generated.")
+
+    print("Completed all plots.")
+
+
+def SequenceDynamicObsCompareTraining():
+    path = 'logs/'
+    save_name = 'results/SequenceDynamicObsTrainingComparison.png'
+
+    indexes, values, keys = getSRperEpisodeFromDirectory(path)
+    print("Read from file has been completed:", path)
+    savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix="Method=")
+    print(save_name, " has been generated.")
+
+    print("Completed all plots.")
+
+
+def plotFreqVsReconsLossWithCI(filename, legend_prefix):
+
+    freq_vs_losses_dict_main = np.load(filename, allow_pickle=True).item()
+
+    keys = list(freq_vs_losses_dict_main.keys())
+    unique_keys = set([key.rsplit('_', 1)[0] for key in keys])
+    unique_keys = natsort.natsorted(unique_keys, reverse=False)
+
+    color = iter(cm.jet(np.linspace(0, 1, len(unique_keys))))
+    lines1 = []
+    lines2 = []
+    legend_keys = [
+        legend_prefix + key for key in unique_keys]
+
+    fig1, ax1 = plt.subplots(figsize=(12, 9))
+    fig2, ax2 = plt.subplots(figsize=(12, 9))
+    ax1_twin = ax1.twinx()
+    ax2_twin = ax2.twinx()
+
+    color = iter(cm.jet(np.linspace(0, 1, len(unique_keys))))
+
+    # TODO:
+    ax1.set_title("Average Test Loss Per Epoch")
+    ax1.set_xlabel("Epochs")
+    ax1.set_ylabel("Loss")
+
+    # TODO:
+    ax2.set_title("Average Test Loss Per Epoch")
+    ax2.set_xlabel("Epochs")
+    ax2.set_ylabel("Loss")
+
+    for unique_key in unique_keys:
+        key_dict = {
+            k: v for k, v in freq_vs_losses_dict_main.items()
+            if k.startswith(unique_key)}
+        numberOfExperiments = len(key_dict)
+        sorted_freq = np.array([
+            v['sorted_frequencies']
+            for k, v in key_dict.items()])
+        normalized_top_n_losses_array = np.array([
+            v['normalized_top_n_losses_array']
+            for k, v in key_dict.items()])
+        normalized_top_n_losses_array_clip = np.array([
+            v['normalized_top_n_losses_array_clip']
+            for k, v in key_dict.items()])
+
+        mean_sorted_freq = np.nanmean(
+            sorted_freq, axis=0)
+        index_values = np.arange(0, len(mean_sorted_freq), 1)
+        # ci_sorted_freq = 1.96 * (
+        #     np.nanstd(sorted_freq, axis=0) /
+        #     np.sqrt((numberOfExperiments)))
+
+        mean_normalized_top_n_losses_array = np.nanmean(
+            normalized_top_n_losses_array, axis=0)
+        ci_normalized_top_n_losses_array = 1.96 * (
+            np.nanstd(normalized_top_n_losses_array, axis=0) /
+            np.sqrt((numberOfExperiments)))
+
+        mean_normalized_top_n_losses_array_clip = np.nanmean(
+            normalized_top_n_losses_array_clip, axis=0)
+        ci_normalized_top_n_losses_array_clip = 1.96 * (
+            np.nanstd(normalized_top_n_losses_array_clip, axis=0) /
+            np.sqrt((numberOfExperiments)))
+
+        c = next(color)
+        ax1.plot(index_values, mean_sorted_freq, color='g', zorder=100)
+        line1, = ax1_twin.plot(
+            index_values,
+            mean_normalized_top_n_losses_array,
+            color=c, zorder=100)
+        lines1.append(line1)
+        ax1_twin.fill_between(
+            index_values,
+            (mean_normalized_top_n_losses_array -
+                ci_normalized_top_n_losses_array),
+            (mean_normalized_top_n_losses_array +
+                ci_normalized_top_n_losses_array),
+            color=c, alpha=.2, zorder=0)
+
+        ax2.plot(index_values, mean_sorted_freq, color='g', zorder=100)
+        line2, = ax2_twin.plot(
+            index_values,
+            mean_normalized_top_n_losses_array_clip,
+            color=c, zorder=100)
+        lines2.append(line2)
+        ax2_twin.fill_between(
+            index_values,
+            (mean_normalized_top_n_losses_array_clip -
+                ci_normalized_top_n_losses_array_clip),
+            (mean_normalized_top_n_losses_array_clip +
+                ci_normalized_top_n_losses_array_clip),
+            color=c, alpha=.2, zorder=0)
+
+    ax1_twin.legend(lines1, legend_keys)
+    ax2_twin.legend(lines2, legend_keys)
+    ax1.set_xticks([])
+    ax1.set_xlabel('Observations')
+    ax1.set_ylabel('Frequency', color='g')
+    ax1_twin.set_ylabel('Reconstruction Error', color='b')
+
+    ax2.set_xticks([])
+    ax2.set_xlabel('Observations')
+    ax2.set_ylabel('Frequency', color='g')
+    ax2_twin.set_ylabel('Reconstruction Error', color='b')
+
+    fig1.savefig(
+        filename.replace("Dict.npy", "") + "NoClipping.png", format="png")
+    fig2.savefig(
+        filename.replace("Dict.npy", "") + "WithClipping.png", format="png")
 
 
 if __name__ == "__main__":
-    main()
+    # MemoryLatentComparison()
+    # DynamicObsLatentComparison()
+    # UniformMemoryCompareTraining()
+    # UniformDynamicObsCompareTraining()
+    # SequenceMemoryCompareTraining()
+    # SequenceDynamicObsCompareTraining()
+    plotFreqVsReconsLossWithCI(
+        filename="save/Experiment_Test_Uniform_Memory_Freq_Vs_Losses_Dict.npy",
+        legend_prefix="Method=")
