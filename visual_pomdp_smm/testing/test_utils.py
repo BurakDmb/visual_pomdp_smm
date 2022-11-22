@@ -129,7 +129,8 @@ def test_function(
                         use_cache=True)
 
                     test_dataset = torch.utils.data.DataLoader(
-                        test_data, batch_size=16800, shuffle=False,
+                        test_data, batch_size=params['batch_size'],
+                        shuffle=False,
                         num_workers=0, pin_memory=False)
 
                     eval_class_data = MinigridGenericDatasetEval(
@@ -141,7 +142,8 @@ def test_function(
                         use_cache=True)
 
                     eval_class_dataset = torch.utils.data.DataLoader(
-                        eval_class_data, batch_size=16800, shuffle=False,
+                        eval_class_data, batch_size=params['batch_size'],
+                        shuffle=False,
                         num_workers=0, pin_memory=False)
 
                     random_data = test_data[
