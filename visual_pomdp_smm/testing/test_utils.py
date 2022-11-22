@@ -107,6 +107,10 @@ def test_function(
                     ae = ae.module
                 ae.eval()
 
+                if "input_dims_h" not in params:
+                    params["input_dims_h"] = params["input_dims"]
+                    params["input_dims_w"] = params["input_dims"]
+
                 if not (prev_image_size is not None
                         and prev_image_size == params['input_dims_h']
                         and prev_train_set_ratio is not None
@@ -225,15 +229,15 @@ def test_function(
                         os.makedirs("save/figures")
 
                     im_orig.save(
-                        "save/figures/"+prefix_name + "_im_orig_" +
-                        filename.replace(prefix_name+"_", "")
-                        .replace(".json", "")
-                        + ".png")
+                        "save/figures/" + prefix_name +
+                        filename.replace(prefix_name+"_", "").
+                        replace(".json", "") +
+                        "_im_orig" + ".png")
                     im_generated.save(
-                        "save/figures/"+prefix_name + "_im_generated_" +
+                        "save/figures/" + prefix_name +
                         filename.replace(prefix_name+"_", "")
-                        .replace(".json", "")
-                        + ".png")
+                        .replace(".json", "") +
+                        "_im_generated" + ".png")
 
                     random_eval_data_hat, _ = ae(
                         torch.unsqueeze(random_eval_data[0], 0).to(device))
@@ -250,15 +254,15 @@ def test_function(
                         random_eval_data_hat_image)
 
                     im_eval_orig.save(
-                        "save/figures/"+prefix_name + "_im_eval_" +
+                        "save/figures/"+prefix_name +
                         filename.replace(prefix_name+"_", "")
-                        .replace(".json", "")
-                        + ".png")
+                        .replace(".json", "") +
+                        "_im_eval" + ".png")
                     im_eval_generated.save(
-                        "save/figures/"+prefix_name + "_im_eval_generated_" +
+                        "save/figures/"+prefix_name +
                         filename.replace(prefix_name+"_", "")
-                        .replace(".json", "")
-                        + ".png")
+                        .replace(".json", "") +
+                        "_im_eval_generated" + ".png")
 
                     # path = (
                     #     "logs/" + prefix_name + "/" +

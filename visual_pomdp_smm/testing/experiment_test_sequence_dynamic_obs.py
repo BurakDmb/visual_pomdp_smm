@@ -5,11 +5,11 @@ from visual_pomdp_smm.testing.test_utils import test_function
 
 resultsDict = test_function(
     prefix_name_inputs=[
-        'minigrid_uniform_memory_ae',
-        'minigrid_uniform_memory_vae',
-        'minigrid_uniform_memory_conv_ae',
-        'minigrid_uniform_memory_conv_vae',
-        # 'minigrid_uniform_memory_conv_binary_ae'
+        'minigrid_sequence_dynamicobs_ae',
+        'minigrid_sequence_dynamicobs_vae',
+        # 'minigrid_sequence_dynamicobs_conv_ae',
+        # 'minigrid_sequence_dynamicobs_conv_vae',
+        # 'minigrid_sequence_dynamicobs_conv_binary_ae'
         ],
     save_figures=True,
     include_all_experiments=True
@@ -21,5 +21,5 @@ print(json_dict)
 if not os.path.exists("save"):
     os.makedirs("save")
 # Writing to sample.json
-with open("save/Experiment_Test_Uniform_Memory.json", "w") as outfile:
+with open("save/Experiment_Test_Sequnce_Dynamic_Obs.json", "w") as outfile:
     outfile.write(json_dict)
