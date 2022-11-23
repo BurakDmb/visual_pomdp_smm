@@ -191,7 +191,7 @@ def SequenceDynamicObsCompareTraining(path='logs/'):
     print("Completed all plots.")
 
 
-def plotFreqVsReconsLossWithCI(filename, legend_prefix):
+def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
     freq_vs_losses_dict_main = np.load(filename, allow_pickle=True).item()
 
     keys = list(freq_vs_losses_dict_main.keys())
@@ -220,13 +220,13 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
         numberOfExperiments = len(key_dict)
         sorted_freq = np.array([
             v['sorted_frequencies']
-            for k, v in key_dict.items()])
+            for k, v in key_dict.items()])[:, 0:plot_first_n_val]
         normalized_top_n_losses_array = np.array([
             v['normalized_top_n_losses_array']
-            for k, v in key_dict.items()])
+            for k, v in key_dict.items()])[:, 0:plot_first_n_val]
         normalized_top_n_losses_array_clip = np.array([
             v['normalized_top_n_losses_array_clip']
-            for k, v in key_dict.items()])
+            for k, v in key_dict.items()])[:, 0:plot_first_n_val]
 
         mean_sorted_freq = np.nanmean(
             sorted_freq, axis=0)

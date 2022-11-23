@@ -59,7 +59,8 @@ def test_model(
 
 def test_function(
         prefix_name_inputs, random_visualize=False, save_figures=False,
-        verbose=False, include_all_experiments=False, n_frequency=500):
+        verbose=False, include_all_experiments=False, n_frequency=500,
+        only_calculate_unique_comparison=False):
 
     dirFiles = os.listdir('save/json')
     if type(prefix_name_inputs) is not list:
@@ -73,7 +74,7 @@ def test_function(
     prev_train_set_ratio = None
     fig1, ax1 = plt.subplots(nrows=1, ncols=1)
     fig2, ax2 = plt.subplots(nrows=1, ncols=1)
-    for prefix_name in tqdm(prefixes):
+    for prefix_name in tqdm(prefixes, position=0):
 
         prefixed = [filename for filename in dirFiles
                     if filename.startswith(prefix_name)]
@@ -94,7 +95,7 @@ def test_function(
                 prefix.split(prefix_name+"_", 1)[1].split('_', 1)[1]
                 for prefix in prefixed]
 
-        for i, filename in enumerate(prefixed):
+        for i, filename in enumerate(tqdm(prefixed, position=1)):
             with open("save/json/"+filename, 'r') as params_file:
                 params = json.loads(params_file.read())
             model_file_name = params['save_path']
@@ -126,7 +127,7 @@ def test_function(
                         image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=True)
+                        use_cache=False)
 
                     test_dataset = torch.utils.data.DataLoader(
                         test_data, batch_size=params['batch_size'],
@@ -139,7 +140,7 @@ def test_function(
                         image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=True)
+                        use_cache=False)
 
                     eval_class_dataset = torch.utils.data.DataLoader(
                         eval_class_data, batch_size=params['batch_size'],
@@ -152,25 +153,30 @@ def test_function(
                         random.randint(0, len(eval_class_data))]
 
                     all_data = MinigridGenericDataset(
-                        "data/", "test",
+                        "data/", "all",
                         image_size_h=params['input_dims_h'],
                         image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=True)
+                        use_cache=False)
 
-                    unique_values, indices, counts = np.unique(
-                        all_data.imgs, return_counts=True,
-                        return_index=True, axis=0)
-                    zipped_array = zip(counts, indices)
-                    sorted_zip_frequencies = sorted(
-                        zipped_array, reverse=True)[0:n_frequency]
+                    flattened_array = all_data.imgs.reshape(
+                        all_data.imgs.shape[0], -1)
+                    df = pd.DataFrame(flattened_array)
+                    df_counts = df.value_counts(sort=True)
+                    unique_values = np.array(
+                        df_counts.keys().tolist(), dtype=np.uint8).reshape(
+                            len(df_counts),
+                            all_data.imgs.shape[1],
+                            all_data.imgs.shape[2],
+                            all_data.imgs.shape[3])
+                    sorted_frequencies = np.array(df_counts.tolist())
+                    print("Total Count: ", sorted_frequencies.sum())
+                    print("Total Unique Samples: ", len(sorted_frequencies))
 
-                    sorted_frequencies, sorted_indices = zip(
-                        *sorted_zip_frequencies)
-                    all_data.imgs = all_data.imgs[np.array(sorted_indices)]
+                    all_data.imgs = unique_values
                     all_dataset = torch.utils.data.DataLoader(
-                        all_data, batch_size=len(sorted_frequencies),
+                        all_data, batch_size=len(unique_values),
                         shuffle=False,
                         num_workers=0, pin_memory=False)
 
@@ -198,52 +204,57 @@ def test_function(
                 #     sorted_indices,
                 #     normalized_top_n_losses_array)
                 freq_vs_losses_dict['sorted_frequencies'] = sorted_frequencies
-                freq_vs_losses_dict['sorted_indices'] = sorted_indices
+                freq_vs_losses_dict['total_unique_samples'] = len(
+                    sorted_frequencies)
+                # freq_vs_losses_dict['sorted_indices'] = sorted_indices
                 freq_vs_losses_dict['normalized_top_n_losses_array'] = \
                     normalized_top_n_losses_array
                 freq_vs_losses_dict['normalized_top_n_losses_array_clip'] = \
                     normalized_top_n_losses_array_clip
 
-                # Calculating noteval dataset results.
-                total_test_loss, test_sample_number, latentArrays,\
-                    test_losses, testLossesArray = test_model(ae, test_dataset)
+                if not only_calculate_unique_comparison:
 
-                resultsDict['filename'] = filename
+                    # Calculating noteval dataset results.
+                    total_test_loss, test_sample_number, latentArrays,\
+                        test_losses, testLossesArray = test_model(
+                            ae, test_dataset)
 
-                norm_test_losses = (
-                    np.array(testLossesArray) / (
-                        params['input_dims_h'] *
-                        params['input_dims_w'] *
-                        params['in_channels'])
-                    )
-                resultsDict['test_avgloss'] = norm_test_losses.sum(
-                    )/test_sample_number
-                resultsDict['test_minloss'] = norm_test_losses.min()
-                resultsDict['test_maxloss'] = norm_test_losses.max()
+                    resultsDict['filename'] = filename
 
-                # Calculating eval dataset results.
-                total_eval_loss, eval_sample_number, evalLatentArrays,\
-                    eval_losses, evalLossesArray = test_model(
-                        ae, eval_class_dataset)
-                norm_eval_losses = (
-                    np.array(evalLossesArray) / (
-                        params['input_dims_h'] *
-                        params['input_dims_w'] *
-                        params['in_channels'])
-                    )
+                    norm_test_losses = (
+                        np.array(testLossesArray) / (
+                            params['input_dims_h'] *
+                            params['input_dims_w'] *
+                            params['in_channels'])
+                        )
+                    resultsDict['test_avgloss'] = norm_test_losses.sum(
+                        )/test_sample_number
+                    resultsDict['test_minloss'] = norm_test_losses.min()
+                    resultsDict['test_maxloss'] = norm_test_losses.max()
 
-                resultsDict['eval_avgloss'] = norm_eval_losses.sum(
-                    )/eval_sample_number
-                resultsDict['eval_minloss'] = norm_eval_losses.min()
-                resultsDict['eval_maxloss'] = norm_eval_losses.max()
+                    # Calculating eval dataset results.
+                    total_eval_loss, eval_sample_number, evalLatentArrays,\
+                        eval_losses, evalLossesArray = test_model(
+                            ae, eval_class_dataset)
+                    norm_eval_losses = (
+                        np.array(evalLossesArray) / (
+                            params['input_dims_h'] *
+                            params['input_dims_w'] *
+                            params['in_channels'])
+                        )
 
-                percent_difference = (
-                    (norm_eval_losses.sum()/eval_sample_number) /
-                    (norm_test_losses.sum()/test_sample_number)
-                    ) * 100 - 100
-                resultsDict['lossdiff'] = percent_difference
+                    resultsDict['eval_avgloss'] = norm_eval_losses.sum(
+                        )/eval_sample_number
+                    resultsDict['eval_minloss'] = norm_eval_losses.min()
+                    resultsDict['eval_maxloss'] = norm_eval_losses.max()
 
-                if verbose:
+                    percent_difference = (
+                        (norm_eval_losses.sum()/eval_sample_number) /
+                        (norm_test_losses.sum()/test_sample_number)
+                        ) * 100 - 100
+                    resultsDict['lossdiff'] = percent_difference
+
+                if verbose and not only_calculate_unique_comparison:
                     print("Filename: ", filename)
                     print(
                         "Test Dataset AvgLoss: ",
@@ -268,7 +279,7 @@ def test_function(
                         "Total Loss Percent diff (eval/test) (%): ",
                         percent_difference)
 
-                if save_figures:
+                if save_figures and not only_calculate_unique_comparison:
 
                     random_data_hat, _ = ae(
                         torch.unsqueeze(random_data[0], 0).to(device))
@@ -353,13 +364,15 @@ def test_function(
                         ax=ax2, legend=True, title=title,
                         xlabel=xlabel, ylabel=ylabel)
 
-            resultsDictMain[current_full_prefix[i]] = resultsDict
+            if not only_calculate_unique_comparison:
+                resultsDictMain[current_full_prefix[i]] = resultsDict
+
             freq_vs_losses_dict_main[current_full_prefix[i]] = \
                 freq_vs_losses_dict
             prev_image_size = params['input_dims_h']
             prev_train_set_ratio = params['train_set_ratio']
 
-    if save_figures:
+    if save_figures and not only_calculate_unique_comparison:
         fig1.tight_layout(pad=0.3)
         fig1.savefig(
             'save/Experiment_Figure_Test_' +
@@ -380,44 +393,6 @@ def test_function(
         #     'save/Experiment_Figure_FreqVsLoss_Clipped' +
         #     os.path.commonprefix(prefixes)+'.png')
     return resultsDictMain, freq_vs_losses_dict_main
-
-
-def _plotfreq(
-        filename, sorted_frequencies,
-        normalized_top_n_losses_array,
-        normalized_top_n_losses_array_clip):
-    # freq_vs_losses_dict_main = np.load(filename).item()
-    # https://stackoverflow.com/a/40220343/9151122
-
-    fig3, ax3 = plt.subplots(nrows=1, ncols=1, figsize=(16, 9))
-    fig4, ax4 = plt.subplots(nrows=1, ncols=1, figsize=(16, 9))
-    # Frequency Of Observations Vs Reconstruction Loss Figures.
-    # Fig3: Without clipping, Fig4: With Clipping
-    index_values = np.arange(0, len(sorted_frequencies), 1)
-    ax3_twin = ax3.twinx()
-    ax4_twin = ax4.twinx()
-
-    ax3.plot(
-        index_values, sorted_frequencies, 'g-')
-    ax3_twin.plot(
-        index_values,
-        normalized_top_n_losses_array, 'b-')
-
-    ax4.plot(
-        index_values, sorted_frequencies, 'g-')
-    ax4_twin.plot(
-        index_values,
-        normalized_top_n_losses_array_clip, 'b-')
-
-    ax3.set_xticks([])
-    ax3.set_xlabel('Observations')
-    ax3.set_ylabel('Frequency', color='g')
-    ax3_twin.set_ylabel('Reconstruction Error', color='b')
-
-    ax4.set_xticks([])
-    ax4.set_xlabel('Observations')
-    ax4.set_ylabel('Frequency', color='g')
-    ax4_twin.set_ylabel('Reconstruction Error', color='b')
 
 
 def calculate_std_table(filename):

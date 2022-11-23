@@ -53,6 +53,16 @@ class MinigridGenericDataset(torch.utils.data.Dataset):
                     tuple(dataset_dict['noteval_states_shape'])))
 
             self.imgs = noteval_states_list
+        elif split == "all":
+            all_states_list = np.memmap(
+                self.data_dir/'sample_all.npy',
+                dtype='uint8', mode='r',
+                shape=(
+                    tuple(dataset_dict['all_states_shape'])))
+            if use_cache:
+                self.imgs = np.array(all_states_list)
+            else:
+                self.imgs = all_states_list[:]
         else:
             all_states_list = np.memmap(
                 self.data_dir/'sample_all.npy',
