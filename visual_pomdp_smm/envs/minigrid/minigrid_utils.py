@@ -45,6 +45,11 @@ class MinigridGenericDataset(torch.utils.data.Dataset):
                     tuple(dataset_dict['eval_states_shape'])))
             self.imgs = eval_states_list
 
+            if use_cache:
+                self.imgs = np.array(eval_states_list)
+            else:
+                self.imgs = eval_states_list[:]
+
         elif split == "noteval":
             noteval_states_list = np.memmap(
                 self.data_dir/'sample_noteval.npy',
@@ -52,7 +57,11 @@ class MinigridGenericDataset(torch.utils.data.Dataset):
                 shape=(
                     tuple(dataset_dict['noteval_states_shape'])))
 
-            self.imgs = noteval_states_list
+            if use_cache:
+                self.imgs = np.array(noteval_states_list)
+            else:
+                self.imgs = noteval_states_list[:]
+
         elif split == "all":
             all_states_list = np.memmap(
                 self.data_dir/'sample_all.npy',
@@ -92,7 +101,7 @@ class MinigridGenericDatasetEval(MinigridGenericDataset):
             dataset_folder_name, use_cache=False, **kwargs):
         super(MinigridGenericDatasetEval, self).__init__(
             data_path, "eval", image_size_h, image_size_w, train_set_ratio,
-            dataset_folder_name, use_cache=False, **kwargs)
+            dataset_folder_name, use_cache=use_cache, **kwargs)
 
 
 class MinigridGenericDatasetNoteval(
@@ -103,4 +112,4 @@ class MinigridGenericDatasetNoteval(
             dataset_folder_name, use_cache=False, **kwargs):
         super(MinigridGenericDatasetNoteval, self).__init__(
             data_path, "noteval", image_size_h, image_size_w, train_set_ratio,
-            dataset_folder_name, use_cache=False, **kwargs)
+            dataset_folder_name, use_cache=use_cache, **kwargs)

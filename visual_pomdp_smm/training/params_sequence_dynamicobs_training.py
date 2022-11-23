@@ -10,7 +10,7 @@ params_ae = {
     'input_dims_w': 48*3,
     'hidden_size': 16,
     'batch_size': 2048,
-    'epochs': 500,
+    'epochs': 50,
     'train_set_ratio': 0.8,
     'in_channels': 3,
     'learning_rate': 1e-5,
@@ -35,7 +35,7 @@ params_vae = {
     'input_dims_w': 48*3,
     'hidden_size': 16,
     'batch_size': 2048,
-    'epochs': 500,
+    'epochs': 50,
     'train_set_ratio': 0.8,
     'in_channels': 3,
     'learning_rate': 1e-5,
@@ -52,3 +52,5 @@ params_vae = {
 
 params_list = [
     params_ae, params_vae]
+params_list = [
+    params_ae]

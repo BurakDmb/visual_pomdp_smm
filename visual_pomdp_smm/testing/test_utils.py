@@ -60,7 +60,7 @@ def test_model(
 def test_function(
         prefix_name_inputs, random_visualize=False, save_figures=False,
         verbose=False, include_all_experiments=False, n_frequency=500,
-        only_calculate_unique_comparison=False):
+        only_calculate_unique_comparison=False, calculate_unique_comparison=False):
 
     dirFiles = os.listdir('save/json')
     if type(prefix_name_inputs) is not list:
@@ -74,7 +74,7 @@ def test_function(
     prev_train_set_ratio = None
     fig1, ax1 = plt.subplots(nrows=1, ncols=1)
     fig2, ax2 = plt.subplots(nrows=1, ncols=1)
-    for prefix_name in tqdm(prefixes, position=0):
+    for prefix_name in prefixes:
 
         prefixed = [filename for filename in dirFiles
                     if filename.startswith(prefix_name)]
@@ -95,7 +95,7 @@ def test_function(
                 prefix.split(prefix_name+"_", 1)[1].split('_', 1)[1]
                 for prefix in prefixed]
 
-        for i, filename in enumerate(tqdm(prefixed, position=1)):
+        for i, filename in enumerate(tqdm(prefixed)):
             with open("save/json/"+filename, 'r') as params_file:
                 params = json.loads(params_file.read())
             model_file_name = params['save_path']
@@ -121,18 +121,47 @@ def test_function(
                         and prev_train_set_ratio == params['train_set_ratio']):
                     print("Creating dataset")
 
+                    if calculate_unique_comparison:
+                        all_data = MinigridGenericDataset(
+                            "data/", "all",
+                            image_size_h=params['input_dims_h'],
+                            image_size_w=params['input_dims_w'],
+                            train_set_ratio=params['train_set_ratio'],
+                            dataset_folder_name=params['dataset_folder_name'],
+                            use_cache=True)
+
+                        flattened_array = all_data.imgs.reshape(
+                            all_data.imgs.shape[0], -1)
+                        df = pd.DataFrame(flattened_array)
+                        df_counts = df.value_counts(sort=True)
+                        unique_values = np.array(
+                            df_counts.keys().tolist(), dtype=np.uint8).reshape(
+                                len(df_counts),
+                                all_data.imgs.shape[1],
+                                all_data.imgs.shape[2],
+                                all_data.imgs.shape[3])
+                        sorted_frequencies = np.array(df_counts.tolist())
+                        print("Total Count: ", sorted_frequencies.sum())
+                        print("Total Unique Samples: ", len(sorted_frequencies))
+
+                        all_data.imgs = unique_values
+                        all_dataset = torch.utils.data.DataLoader(
+                            all_data, batch_size=len(unique_values),
+                            shuffle=False,
+                            num_workers=0, pin_memory=False)
+
                     test_data = MinigridGenericDatasetNoteval(
                         "data/", "test",
                         image_size_h=params['input_dims_h'],
                         image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=False)
+                        use_cache=True)
 
                     test_dataset = torch.utils.data.DataLoader(
-                        test_data, batch_size=params['batch_size'],
+                        test_data, batch_size=params['batch_size']*10,
                         shuffle=False,
-                        num_workers=0, pin_memory=False)
+                        num_workers=8, pin_memory=False)
 
                     eval_class_data = MinigridGenericDatasetEval(
                         "data/", "",
@@ -140,77 +169,50 @@ def test_function(
                         image_size_w=params['input_dims_w'],
                         train_set_ratio=params['train_set_ratio'],
                         dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=False)
+                        use_cache=True)
 
                     eval_class_dataset = torch.utils.data.DataLoader(
-                        eval_class_data, batch_size=params['batch_size'],
+                        eval_class_data, batch_size=params['batch_size']*10,
                         shuffle=False,
-                        num_workers=0, pin_memory=False)
+                        num_workers=8, pin_memory=False)
 
                     random_data = test_data[
                         random.randint(0, len(test_data))]
                     random_eval_data = eval_class_data[
                         random.randint(0, len(eval_class_data))]
 
-                    all_data = MinigridGenericDataset(
-                        "data/", "all",
-                        image_size_h=params['input_dims_h'],
-                        image_size_w=params['input_dims_w'],
-                        train_set_ratio=params['train_set_ratio'],
-                        dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=False)
-
-                    flattened_array = all_data.imgs.reshape(
-                        all_data.imgs.shape[0], -1)
-                    df = pd.DataFrame(flattened_array)
-                    df_counts = df.value_counts(sort=True)
-                    unique_values = np.array(
-                        df_counts.keys().tolist(), dtype=np.uint8).reshape(
-                            len(df_counts),
-                            all_data.imgs.shape[1],
-                            all_data.imgs.shape[2],
-                            all_data.imgs.shape[3])
-                    sorted_frequencies = np.array(df_counts.tolist())
-                    print("Total Count: ", sorted_frequencies.sum())
-                    print("Total Unique Samples: ", len(sorted_frequencies))
-
-                    all_data.imgs = unique_values
-                    all_dataset = torch.utils.data.DataLoader(
-                        all_data, batch_size=len(unique_values),
-                        shuffle=False,
-                        num_workers=0, pin_memory=False)
-
                     print("Finished creating dataset.")
 
-                # Calculating all dataset results.
-                top_n_eval_loss, top_n_sample_number, top_n_LatentArrays,\
-                    top_n_losses, top_n_LossesArray = test_model(
-                        ae, all_dataset)
+                if calculate_unique_comparison:
+                    # Calculating all dataset results.
+                    top_n_eval_loss, top_n_sample_number, top_n_LatentArrays,\
+                        top_n_losses, top_n_LossesArray = test_model(
+                            ae, all_dataset)
 
-                normalized_top_n_losses_array = (
-                    np.array(top_n_LossesArray) / (
-                        params['input_dims_h'] *
-                        params['input_dims_w'] *
-                        params['in_channels'])
-                    )
-                # We should clip the values if its exceeds
-                # 10x larger than the minimum loss
-                normalized_top_n_losses_array_clip = np.clip(
-                    normalized_top_n_losses_array,
-                    normalized_top_n_losses_array.min(),
-                    normalized_top_n_losses_array.min()*10)
-                # freq_index_loss_zip = zip(
-                #     sorted_frequencies,
-                #     sorted_indices,
-                #     normalized_top_n_losses_array)
-                freq_vs_losses_dict['sorted_frequencies'] = sorted_frequencies
-                freq_vs_losses_dict['total_unique_samples'] = len(
-                    sorted_frequencies)
-                # freq_vs_losses_dict['sorted_indices'] = sorted_indices
-                freq_vs_losses_dict['normalized_top_n_losses_array'] = \
-                    normalized_top_n_losses_array
-                freq_vs_losses_dict['normalized_top_n_losses_array_clip'] = \
-                    normalized_top_n_losses_array_clip
+                    normalized_top_n_losses_array = (
+                        np.array(top_n_LossesArray) / (
+                            params['input_dims_h'] *
+                            params['input_dims_w'] *
+                            params['in_channels'])
+                        )
+                    # We should clip the values if its exceeds
+                    # 10x larger than the minimum loss
+                    normalized_top_n_losses_array_clip = np.clip(
+                        normalized_top_n_losses_array,
+                        normalized_top_n_losses_array.min(),
+                        normalized_top_n_losses_array.min()*10)
+                    # freq_index_loss_zip = zip(
+                    #     sorted_frequencies,
+                    #     sorted_indices,
+                    #     normalized_top_n_losses_array)
+                    freq_vs_losses_dict['sorted_frequencies'] = sorted_frequencies
+                    freq_vs_losses_dict['total_unique_samples'] = len(
+                        sorted_frequencies)
+                    # freq_vs_losses_dict['sorted_indices'] = sorted_indices
+                    freq_vs_losses_dict['normalized_top_n_losses_array'] = \
+                        normalized_top_n_losses_array
+                    freq_vs_losses_dict['normalized_top_n_losses_array_clip'] = \
+                        normalized_top_n_losses_array_clip
 
                 if not only_calculate_unique_comparison:
 
