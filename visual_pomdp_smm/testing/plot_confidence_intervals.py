@@ -79,7 +79,7 @@ def getSRperEpisodeFromDirectory(dpath, scalar_name="AvgLossPerEpoch/test"):
 def savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix):
     plt.rcParams.update({'font.size': 18})
     fig, ax = plt.subplots(figsize=(12, 9))
-    ax.set_title("Average Test Loss Per Epoch")
+    # ax.set_title("Average Test Loss Per Epoch")
     # color = iter(cm.brg(np.linspace(0, 1, len(keys))))
     color = iter(cm.jet(np.linspace(0, 1, len(keys))))
     ax.set_xlabel("Epochs")
@@ -88,7 +88,8 @@ def savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix):
     # keys = sorted(keys)
     keys = natsort.natsorted(keys, reverse=False)
     legend_keys = [
-        legend_prefix + key.rsplit('_', 1)[1] for key in keys]
+        legend_prefix + key.replace(os.path.commonprefix(keys), "")
+        .upper() for key in keys]
     for key in keys:
         indexesList = indexes[key]
         valuesList = values[key]
@@ -147,7 +148,7 @@ def DynamicObsLatentComparison(path='save/csv/dynamicobs_conv_ae/'):
     print("Completed all plots.")
 
 
-def UniformMemoryCompareTraining(path='logs/'):
+def UniformMemoryCompareTraining(path='logs'):
     save_name = 'results/UniformMemoryTrainingComparison.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -158,7 +159,7 @@ def UniformMemoryCompareTraining(path='logs/'):
     print("Completed all plots.")
 
 
-def UniformDynamicObsCompareTraining(path='logs/'):
+def UniformDynamicObsCompareTraining(path='logs'):
     save_name = 'results/UniformDynamicObsTrainingComparison.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -203,7 +204,7 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
     lines2 = []
     legend_keys = [
         legend_prefix + key.replace(os.path.commonprefix(unique_keys), "")
-        .capitalize() for key in unique_keys]
+        .upper() for key in unique_keys]
     legend_keys.append("Visitation Count")
 
     fig1, ax1 = plt.subplots(figsize=(16, 9))
@@ -283,12 +284,12 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
                 ci_normalized_top_n_losses_array_clip),
             color=c, alpha=.2, zorder=0)
 
-    ax1.set_title(
-        "Visitation Count Versus Autoencoder Reconstruction Error",
-        fontsize=18)
-    ax2.set_title(
-        "Visitation Count Versus Autoencoder Reconstruction Error",
-        fontsize=18)
+    # ax1.set_title(
+    #     "Visitation Count Versus Autoencoder Reconstruction Error",
+    #     fontsize=18)
+    # ax2.set_title(
+    #     "Visitation Count Versus Autoencoder Reconstruction Error",
+    #     fontsize=18)
 
     lines1.append(line1_)
     lines2.append(line2_)
@@ -320,19 +321,19 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
 if __name__ == "__main__":
     MemoryLatentComparison(
         "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
-        "uniform_memory_latent/logs")
+        "uniform_memory_latent/logs/")
     DynamicObsLatentComparison(
         "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
-        "uniform_dynamicobs_latent/logs")
+        "uniform_dynamicobs_latent/logs/")
     UniformMemoryCompareTraining(
         "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
-        "uniform_memory_hidden128/logs")
+        "uniform_memory_hidden128/logs/")
     UniformDynamicObsCompareTraining(
         "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
-        "uniform_dynamicobs_hidden128/logs")
+        "uniform_dynamicobs_hidden128/logs/")
     SequenceMemoryCompareTraining(
         "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
-        "sequence_memory/logs")
+        "sequence_memory/logs/")
     # SequenceDynamicObsCompareTraining(
     #     "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/sequence_dynamicobs/logs")
 
