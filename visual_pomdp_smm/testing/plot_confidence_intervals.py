@@ -225,6 +225,7 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
     lines2 = []
     legend_keys = [
         legend_prefix + key for key in unique_keys]
+    legend_keys.append("Visitation Count")
 
     fig1, ax1 = plt.subplots(figsize=(12, 9))
     fig2, ax2 = plt.subplots(figsize=(12, 9))
@@ -232,16 +233,6 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
     ax2_twin = ax2.twinx()
 
     color = iter(cm.jet(np.linspace(0, 1, len(unique_keys))))
-
-    # TODO:
-    ax1.set_title("Average Test Loss Per Epoch")
-    ax1.set_xlabel("Epochs")
-    ax1.set_ylabel("Loss")
-
-    # TODO:
-    ax2.set_title("Average Test Loss Per Epoch")
-    ax2.set_xlabel("Epochs")
-    ax2.set_ylabel("Loss")
 
     for unique_key in unique_keys:
         key_dict = {
@@ -260,6 +251,7 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
 
         mean_sorted_freq = np.nanmean(
             sorted_freq, axis=0)
+        mean_sorted_freq = mean_sorted_freq / mean_sorted_freq.sum()
         index_values = np.arange(0, len(mean_sorted_freq), 1)
         # ci_sorted_freq = 1.96 * (
         #     np.nanstd(sorted_freq, axis=0) /
@@ -278,11 +270,15 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
             np.sqrt((numberOfExperiments)))
 
         c = next(color)
-        ax1.plot(index_values, mean_sorted_freq, color='g', zorder=100)
+
+        line1_, = ax1.plot(
+            index_values, mean_sorted_freq, color='g',
+            zorder=100, linewidth=4)
         line1, = ax1_twin.plot(
             index_values,
             mean_normalized_top_n_losses_array,
             color=c, zorder=100)
+
         lines1.append(line1)
         ax1_twin.fill_between(
             index_values,
@@ -292,7 +288,9 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
                 ci_normalized_top_n_losses_array),
             color=c, alpha=.2, zorder=0)
 
-        ax2.plot(index_values, mean_sorted_freq, color='g', zorder=100)
+        line2_, = ax2.plot(
+            index_values, mean_sorted_freq, color='g',
+            zorder=100, linewidth=4)
         line2, = ax2_twin.plot(
             index_values,
             mean_normalized_top_n_losses_array_clip,
@@ -306,17 +304,28 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
                 ci_normalized_top_n_losses_array_clip),
             color=c, alpha=.2, zorder=0)
 
-    ax1_twin.legend(lines1, legend_keys)
-    ax2_twin.legend(lines2, legend_keys)
+    ax1.set_title(
+        "Visitation Count Versus Autoencoder Reconstruction Error",
+        fontsize=18)
+    ax2.set_title(
+        "Visitation Count Versus Autoencoder Reconstruction Error",
+        fontsize=18)
+
+    lines1.append(line1_)
+    lines2.append(line2_)
+    ax1_twin.legend(lines1, legend_keys, loc='upper right').set_zorder(200)
+    ax2_twin.legend(lines2, legend_keys, loc='upper right').set_zorder(200)
     ax1.set_xticks([])
-    ax1.set_xlabel('Observations')
-    ax1.set_ylabel('Frequency', color='g')
-    ax1_twin.set_ylabel('Reconstruction Error', color='b')
+    ax1.set_xlabel('Observations', fontsize=18)
+    ax1.set_ylabel(
+        'Normalized Visit Count / Frequency', color='g', fontsize=18)
+    ax1_twin.set_ylabel('Reconstruction Error', color='k', fontsize=18)
 
     ax2.set_xticks([])
-    ax2.set_xlabel('Observations')
-    ax2.set_ylabel('Frequency', color='g')
-    ax2_twin.set_ylabel('Reconstruction Error', color='b')
+    ax2.set_xlabel('Observations', fontsize=18)
+    ax2.set_ylabel(
+        'Normalized Visit Count / Frequency', color='g', fontsize=18)
+    ax2_twin.set_ylabel('Reconstruction Error', color='k',  fontsize=18)
 
     fig1.savefig(
         filename.replace("Dict.npy", "") + "NoClipping.png", format="png")
@@ -331,6 +340,27 @@ if __name__ == "__main__":
     # UniformDynamicObsCompareTraining()
     # SequenceMemoryCompareTraining()
     # SequenceDynamicObsCompareTraining()
+
     plotFreqVsReconsLossWithCI(
-        filename="save/Experiment_Test_Uniform_Memory_Freq_Vs_Losses_Dict.npy",
-        legend_prefix="Method=")
+        filename=(
+            "save/" +
+            "Experiment_Test_Uniform_Memory_Freq_Vs_Losses_Dict.npy"),
+        legend_prefix="")
+
+    # plotFreqVsReconsLossWithCI(
+    #     filename=(
+    #         "save/" +
+    #         "Experiment_Test_Uniform_Dynamic_Obs_Freq_Vs_Losses_Dict.npy"),
+    #     legend_prefix="")
+
+    # plotFreqVsReconsLossWithCI(
+    #     filename=(
+    #         "save/" +
+    #         "Experiment_Test_Sequence_Memory_Freq_Vs_Losses_Dict.npy"),
+    #     legend_prefix="")
+
+    # plotFreqVsReconsLossWithCI(
+    #     filename=(
+    #         "save/" +
+    #         "Experiment_Test_Sequence_Dynamic_Obs_Freq_Vs_Losses_Dict.npy"),
+    #     legend_prefix="")
