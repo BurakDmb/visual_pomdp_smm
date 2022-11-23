@@ -224,7 +224,8 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
     lines1 = []
     lines2 = []
     legend_keys = [
-        legend_prefix + key for key in unique_keys]
+        legend_prefix + key.replace(os.path.commonprefix(unique_keys), "")
+        .capitalize() for key in unique_keys]
     legend_keys.append("Visitation Count")
 
     fig1, ax1 = plt.subplots(figsize=(16, 9))
@@ -313,8 +314,10 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
 
     lines1.append(line1_)
     lines2.append(line2_)
-    ax1_twin.legend(lines1, legend_keys, loc='upper right').set_zorder(200)
-    ax2_twin.legend(lines2, legend_keys, loc='upper right').set_zorder(200)
+    ax1_twin.legend(
+        lines1, legend_keys, loc='upper right', fontsize=15).set_zorder(200)
+    ax2_twin.legend(
+        lines2, legend_keys, loc='upper right', fontsize=15).set_zorder(200)
     ax1.set_xticks([])
     ax1.set_xlabel('Observations', fontsize=18)
     ax1.set_ylabel(
