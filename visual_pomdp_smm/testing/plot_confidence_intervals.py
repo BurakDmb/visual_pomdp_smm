@@ -120,8 +120,8 @@ def savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix):
     fig.savefig(save_name, format="png")
 
 
-def MemoryLatentComparison():
-    path = 'save/csv/memory_conv_ae/'
+def MemoryLatentComparison(path='save/csv/memory_conv_ae/'):
+
     save_name = 'results/LatentComparison_Memory_Conv_AE.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -131,19 +131,10 @@ def MemoryLatentComparison():
         legend_prefix="Latent Dimension Size=")
     print(save_name, " has been generated.")
 
-    path = 'save/csv/memory_conv_binary/'
-    save_name = 'results/LatentComparison_Memory_Conv_Binary_AE.png'
-
-    indexes, values, keys = getSRperEpisodeFromDirectory(path)
-    print("Read from file has been completed:", path)
-    savePlotSRWithCI(indexes, values, keys, save_name)
-    print(save_name, " has been generated.")
-
     print("Completed all plots.")
 
 
-def DynamicObsLatentComparison():
-    path = 'save/csv/dynamicobs_conv_ae/'
+def DynamicObsLatentComparison(path='save/csv/dynamicobs_conv_ae/'):
     save_name = 'results/LatentComparison_DynamicObs_Conv_AE.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -153,19 +144,10 @@ def DynamicObsLatentComparison():
         legend_prefix="Latent Dimension Size=")
     print(save_name, " has been generated.")
 
-    path = 'save/csv/dynamicobs_conv_binary/'
-    save_name = 'results/LatentComparison_DynamicObs_Conv_Binary_AE.png'
-
-    indexes, values, keys = getSRperEpisodeFromDirectory(path)
-    print("Read from file has been completed:", path)
-    savePlotSRWithCI(indexes, values, keys, save_name)
-    print(save_name, " has been generated.")
-
     print("Completed all plots.")
 
 
-def UniformMemoryCompareTraining():
-    path = 'logs/'
+def UniformMemoryCompareTraining(path='logs/'):
     save_name = 'results/UniformMemoryTrainingComparison.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -176,8 +158,7 @@ def UniformMemoryCompareTraining():
     print("Completed all plots.")
 
 
-def UniformDynamicObsCompareTraining():
-    path = 'logs/'
+def UniformDynamicObsCompareTraining(path='logs/'):
     save_name = 'results/UniformDynamicObsTrainingComparison.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -188,8 +169,7 @@ def UniformDynamicObsCompareTraining():
     print("Completed all plots.")
 
 
-def SequenceMemoryCompareTraining():
-    path = 'logs/'
+def SequenceMemoryCompareTraining(path='logs/'):
     save_name = 'results/SequenceMemoryTrainingComparison.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -200,8 +180,7 @@ def SequenceMemoryCompareTraining():
     print("Completed all plots.")
 
 
-def SequenceDynamicObsCompareTraining():
-    path = 'logs/'
+def SequenceDynamicObsCompareTraining(path='logs/'):
     save_name = 'results/SequenceDynamicObsTrainingComparison.png'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
@@ -213,7 +192,6 @@ def SequenceDynamicObsCompareTraining():
 
 
 def plotFreqVsReconsLossWithCI(filename, legend_prefix):
-
     freq_vs_losses_dict_main = np.load(filename, allow_pickle=True).item()
 
     keys = list(freq_vs_losses_dict_main.keys())
@@ -319,48 +297,66 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
     ax2_twin.legend(
         lines2, legend_keys, loc='upper right', fontsize=15).set_zorder(200)
     ax1.set_xticks([])
-    ax1.set_xlabel('Observations', fontsize=18)
+    ax1.set_xlabel('Memory Samples', fontsize=18)
     ax1.set_ylabel(
         'Normalized Visit Count / Frequency', color='g', fontsize=18)
     ax1_twin.set_ylabel('Reconstruction Error', color='k', fontsize=18)
 
     ax2.set_xticks([])
-    ax2.set_xlabel('Observations', fontsize=18)
+    ax2.set_xlabel('Memory Samples', fontsize=18)
     ax2.set_ylabel(
         'Normalized Visit Count / Frequency', color='g', fontsize=18)
     ax2_twin.set_ylabel('Reconstruction Error', color='k',  fontsize=18)
 
+    save_name = 'results/'+filename.replace("Dict.npy", "").rsplit("/", 1)[1]
     fig1.savefig(
-        filename.replace("Dict.npy", "") + "NoClipping.png", format="png")
+        save_name + "NoClipping.png", format="png")
     fig2.savefig(
-        filename.replace("Dict.npy", "") + "WithClipping.png", format="png")
+        save_name + "WithClipping.png", format="png")
+
+    print("Read from file has been completed:", filename)
 
 
 if __name__ == "__main__":
-    # MemoryLatentComparison()
-    # DynamicObsLatentComparison()
-    # UniformMemoryCompareTraining()
-    # UniformDynamicObsCompareTraining()
-    # SequenceMemoryCompareTraining()
-    # SequenceDynamicObsCompareTraining()
+    MemoryLatentComparison(
+        "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+        "uniform_memory_latent/logs")
+    DynamicObsLatentComparison(
+        "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+        "uniform_dynamicobs_latent/logs")
+    UniformMemoryCompareTraining(
+        "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+        "uniform_memory_hidden128/logs")
+    UniformDynamicObsCompareTraining(
+        "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+        "uniform_dynamicobs_hidden128/logs")
+    SequenceMemoryCompareTraining(
+        "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+        "sequence_memory/logs")
+    # SequenceDynamicObsCompareTraining(
+    #     "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/sequence_dynamicobs/logs")
 
     plotFreqVsReconsLossWithCI(
         filename=(
-            "save/" +
-            "Experiment_Test_Uniform_Memory_Freq_Vs_Losses_Dict.npy"),
+            "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+            "uniform_memory_hidden128/save/" +
+            "Experiment_Test_Uniform_Memory_Freq_Vs_Losses_Dict.npy"
+            ),
         legend_prefix="")
 
-    # plotFreqVsReconsLossWithCI(
-    #     filename=(
-    #         "save/" +
-    #         "Experiment_Test_Uniform_Dynamic_Obs_Freq_Vs_Losses_Dict.npy"),
-    #     legend_prefix="")
+    plotFreqVsReconsLossWithCI(
+        filename=(
+            "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+            "uniform_dynamicobs_hidden128/save/" +
+            "Experiment_Test_Uniform_Dynamic_Obs_Freq_Vs_Losses_Dict.npy"),
+        legend_prefix="")
 
-    # plotFreqVsReconsLossWithCI(
-    #     filename=(
-    #         "save/" +
-    #         "Experiment_Test_Sequence_Memory_Freq_Vs_Losses_Dict.npy"),
-    #     legend_prefix="")
+    plotFreqVsReconsLossWithCI(
+        filename=(
+            "/media/bhdemirbilek/Samsung_T5/visual_sonuclar/" +
+            "sequence_memory/save/" +
+            "Experiment_Test_Sequence_Memory_Freq_Vs_Losses_Dict.npy"),
+        legend_prefix="")
 
     # plotFreqVsReconsLossWithCI(
     #     filename=(
