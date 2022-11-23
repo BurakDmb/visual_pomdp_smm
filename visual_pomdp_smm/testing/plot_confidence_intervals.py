@@ -227,8 +227,8 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix):
         legend_prefix + key for key in unique_keys]
     legend_keys.append("Visitation Count")
 
-    fig1, ax1 = plt.subplots(figsize=(12, 9))
-    fig2, ax2 = plt.subplots(figsize=(12, 9))
+    fig1, ax1 = plt.subplots(figsize=(16, 9))
+    fig2, ax2 = plt.subplots(figsize=(16, 9))
     ax1_twin = ax1.twinx()
     ax2_twin = ax2.twinx()
 
