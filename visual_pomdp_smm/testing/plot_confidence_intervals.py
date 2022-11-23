@@ -117,12 +117,12 @@ def savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix):
     # ax.set_ylim(0, 0.2)
     ax.legend(lines, legend_keys)
     # fig.savefig(save_name, format="png", bbox_inches="tight")
-    fig.savefig(save_name, format="png")
+    fig.savefig(save_name, format="pdf")
 
 
 def MemoryLatentComparison(path='save/csv/memory_conv_ae/'):
 
-    save_name = 'results/LatentComparison_Memory_Conv_AE.png'
+    save_name = 'results/LatentComparison_Memory_Conv_AE.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
@@ -135,7 +135,7 @@ def MemoryLatentComparison(path='save/csv/memory_conv_ae/'):
 
 
 def DynamicObsLatentComparison(path='save/csv/dynamicobs_conv_ae/'):
-    save_name = 'results/LatentComparison_DynamicObs_Conv_AE.png'
+    save_name = 'results/LatentComparison_DynamicObs_Conv_AE.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
@@ -148,7 +148,7 @@ def DynamicObsLatentComparison(path='save/csv/dynamicobs_conv_ae/'):
 
 
 def UniformMemoryCompareTraining(path='logs/'):
-    save_name = 'results/UniformMemoryTrainingComparison.png'
+    save_name = 'results/UniformMemoryTrainingComparison.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
@@ -159,7 +159,7 @@ def UniformMemoryCompareTraining(path='logs/'):
 
 
 def UniformDynamicObsCompareTraining(path='logs/'):
-    save_name = 'results/UniformDynamicObsTrainingComparison.png'
+    save_name = 'results/UniformDynamicObsTrainingComparison.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
@@ -170,7 +170,7 @@ def UniformDynamicObsCompareTraining(path='logs/'):
 
 
 def SequenceMemoryCompareTraining(path='logs/'):
-    save_name = 'results/SequenceMemoryTrainingComparison.png'
+    save_name = 'results/SequenceMemoryTrainingComparison.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
@@ -181,7 +181,7 @@ def SequenceMemoryCompareTraining(path='logs/'):
 
 
 def SequenceDynamicObsCompareTraining(path='logs/'):
-    save_name = 'results/SequenceDynamicObsTrainingComparison.png'
+    save_name = 'results/SequenceDynamicObsTrainingComparison.pdf'
 
     indexes, values, keys = getSRperEpisodeFromDirectory(path)
     print("Read from file has been completed:", path)
@@ -310,9 +310,9 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
 
     save_name = 'results/'+filename.replace("Dict.npy", "").rsplit("/", 1)[1]
     fig1.savefig(
-        save_name + "NoClipping.png", format="png")
+        save_name + "NoClipping.pdf", format="pdf")
     fig2.savefig(
-        save_name + "WithClipping.png", format="png")
+        save_name + "WithClipping.pdf", format="pdf")
 
     print("Read from file has been completed:", filename)
 
