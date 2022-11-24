@@ -157,7 +157,7 @@ def test_function(
                             image_size_w=params['input_dims_w'],
                             train_set_ratio=params['train_set_ratio'],
                             dataset_folder_name=params['dataset_folder_name'],
-                            use_cache=True)
+                            use_cache=False)
 
                         test_dataset = torch.utils.data.DataLoader(
                             test_data, batch_size=params['batch_size']*10,
@@ -170,7 +170,7 @@ def test_function(
                             image_size_w=params['input_dims_w'],
                             train_set_ratio=params['train_set_ratio'],
                             dataset_folder_name=params['dataset_folder_name'],
-                            use_cache=True)
+                            use_cache=False)
 
                         eval_class_dataset = torch.utils.data.DataLoader(
                             eval_class_data, batch_size=params['batch_size']*10,
