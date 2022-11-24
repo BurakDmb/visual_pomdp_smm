@@ -60,7 +60,7 @@ def test_model(
 def test_function(
         prefix_name_inputs, random_visualize=False, save_figures=False,
         verbose=False, include_all_experiments=False, n_frequency=500,
-        only_calculate_unique_comparison=False, calculate_unique_comparison=False):
+        only_calculate_unique_comparison=False, calculate_unique_comparison=True):
 
     dirFiles = os.listdir('save/json')
     if type(prefix_name_inputs) is not list:

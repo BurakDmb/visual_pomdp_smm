@@ -52,5 +52,3 @@ params_vae = {
 
 params_list = [
     params_ae, params_vae]
-params_list = [
-    params_ae]
