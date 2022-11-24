@@ -6,7 +6,7 @@ import numpy as np
 
 from visual_pomdp_smm.testing.test_utils import (calculate_std_table,
                                                  test_function)
-
+print(True if sys.argv[1]=="True" else False)
 resultsDict, freq_vs_losses_dict = test_function(
     prefix_name_inputs=[
         'minigrid_sequence_memory_ae',
@@ -17,8 +17,8 @@ resultsDict, freq_vs_losses_dict = test_function(
         ],
     save_figures=True,
     include_all_experiments=True,
-    only_calculate_unique_comparison=bool(sys.argv[1]),
-    calculate_unique_comparison=bool(sys.argv[1])
+    only_calculate_unique_comparison=True if sys.argv[1]=="True" else False,
+    calculate_unique_comparison=True if sys.argv[1]=="True" else False
 )
 
 json_dict = json.dumps(resultsDict, indent=2, default=str)
