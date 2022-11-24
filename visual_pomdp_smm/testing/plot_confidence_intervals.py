@@ -192,7 +192,7 @@ def SequenceDynamicObsCompareTraining(path='logs/'):
     print("Completed all plots.")
 
 
-def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
+def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=10):
     freq_vs_losses_dict_main = np.load(filename, allow_pickle=True).item()
 
     keys = list(freq_vs_losses_dict_main.keys())
