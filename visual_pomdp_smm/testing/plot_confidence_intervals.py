@@ -192,7 +192,7 @@ def SequenceDynamicObsCompareTraining(path='logs/'):
     print("Completed all plots.")
 
 
-def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
+def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=10):
     freq_vs_losses_dict_main = np.load(filename, allow_pickle=True).item()
 
     keys = list(freq_vs_losses_dict_main.keys())
@@ -300,13 +300,13 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=30):
     ax1.set_xticks([])
     ax1.set_xlabel('Memory Samples', fontsize=18)
     ax1.set_ylabel(
-        'Normalized Visit Count / Frequency', color='g', fontsize=18)
+        'Visit Frequency (Normalized)', color='g', fontsize=18)
     ax1_twin.set_ylabel('Reconstruction Error', color='k', fontsize=18)
 
     ax2.set_xticks([])
     ax2.set_xlabel('Memory Samples', fontsize=18)
     ax2.set_ylabel(
-        'Normalized Visit Count / Frequency', color='g', fontsize=18)
+        'Visit Frequency (Normalized)', color='g', fontsize=18)
     ax2_twin.set_ylabel('Reconstruction Error', color='k',  fontsize=18)
 
     save_name = 'results/'+filename.replace("Dict.npy", "").rsplit("/", 1)[1]
