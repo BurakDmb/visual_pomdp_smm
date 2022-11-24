@@ -150,36 +150,37 @@ def test_function(
                             shuffle=False,
                             num_workers=0, pin_memory=False)
 
-                    test_data = MinigridGenericDatasetNoteval(
-                        "data/", "test",
-                        image_size_h=params['input_dims_h'],
-                        image_size_w=params['input_dims_w'],
-                        train_set_ratio=params['train_set_ratio'],
-                        dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=True)
+                    if not only_calculate_unique_comparison:
+                        test_data = MinigridGenericDatasetNoteval(
+                            "data/", "test",
+                            image_size_h=params['input_dims_h'],
+                            image_size_w=params['input_dims_w'],
+                            train_set_ratio=params['train_set_ratio'],
+                            dataset_folder_name=params['dataset_folder_name'],
+                            use_cache=True)
 
-                    test_dataset = torch.utils.data.DataLoader(
-                        test_data, batch_size=params['batch_size']*10,
-                        shuffle=False,
-                        num_workers=16, pin_memory=False)
+                        test_dataset = torch.utils.data.DataLoader(
+                            test_data, batch_size=params['batch_size']*10,
+                            shuffle=False,
+                            num_workers=16, pin_memory=False)
 
-                    eval_class_data = MinigridGenericDatasetEval(
-                        "data/", "",
-                        image_size_h=params['input_dims_h'],
-                        image_size_w=params['input_dims_w'],
-                        train_set_ratio=params['train_set_ratio'],
-                        dataset_folder_name=params['dataset_folder_name'],
-                        use_cache=True)
+                        eval_class_data = MinigridGenericDatasetEval(
+                            "data/", "",
+                            image_size_h=params['input_dims_h'],
+                            image_size_w=params['input_dims_w'],
+                            train_set_ratio=params['train_set_ratio'],
+                            dataset_folder_name=params['dataset_folder_name'],
+                            use_cache=True)
 
-                    eval_class_dataset = torch.utils.data.DataLoader(
-                        eval_class_data, batch_size=params['batch_size']*10,
-                        shuffle=False,
-                        num_workers=16, pin_memory=False)
+                        eval_class_dataset = torch.utils.data.DataLoader(
+                            eval_class_data, batch_size=params['batch_size']*10,
+                            shuffle=False,
+                            num_workers=16, pin_memory=False)
 
-                    random_data = test_data[
-                        random.randint(0, len(test_data))]
-                    random_eval_data = eval_class_data[
-                        random.randint(0, len(eval_class_data))]
+                        random_data = test_data[
+                            random.randint(0, len(test_data))]
+                        random_eval_data = eval_class_data[
+                            random.randint(0, len(eval_class_data))]
 
                     print("Finished creating dataset.")
 
