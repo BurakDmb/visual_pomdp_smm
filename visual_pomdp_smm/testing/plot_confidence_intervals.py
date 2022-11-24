@@ -242,12 +242,16 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=10):
         ci_normalized_top_n_losses_array = 1.96 * (
             np.nanstd(normalized_top_n_losses_array, axis=0) /
             np.sqrt((numberOfExperiments)))
+        mean_normalized_top_n_losses_array = np.log(
+            1 + mean_normalized_top_n_losses_array)
 
         mean_normalized_top_n_losses_array_clip = np.nanmean(
             normalized_top_n_losses_array_clip, axis=0)
         ci_normalized_top_n_losses_array_clip = 1.96 * (
             np.nanstd(normalized_top_n_losses_array_clip, axis=0) /
             np.sqrt((numberOfExperiments)))
+        mean_normalized_top_n_losses_array_clip = np.log(
+            1 + mean_normalized_top_n_losses_array_clip)
 
         c = next(color)
 

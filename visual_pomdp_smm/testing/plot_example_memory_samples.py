@@ -61,6 +61,16 @@ def main():
     img_2_1 = Image.fromarray(dynamicobs_eval_class_data.imgs[0])
     img_2_2 = Image.fromarray(dynamicobs_test_data.imgs[-1])
 
+    img_3_1 = Image.fromarray(memory_eval_class_data.imgs[1])
+    img_3_2 = Image.fromarray(memory_test_data.imgs[11])
+    img_4_1 = Image.fromarray(dynamicobs_eval_class_data.imgs[1])
+    img_4_2 = Image.fromarray(dynamicobs_test_data.imgs[-2])
+
+    img_5_1 = Image.fromarray(memory_eval_class_data.imgs[2])
+    img_5_2 = Image.fromarray(memory_test_data.imgs[13])
+    img_6_1 = Image.fromarray(dynamicobs_eval_class_data.imgs[2])
+    img_6_2 = Image.fromarray(dynamicobs_test_data.imgs[-3])
+
     # Save images
     memory_env_fully_obs_example.save(
         'results/Example_Fully_Obs_Memory_Env.png')
@@ -70,6 +80,14 @@ def main():
     img_1_2.save("results/Example_Memory_Samples_1_2.png")
     img_2_1.save("results/Example_Memory_Samples_2_1.png")
     img_2_2.save("results/Example_Memory_Samples_2_2.png")
+    img_3_1.save("results/Example_Memory_Samples_3_1.png")
+    img_3_2.save("results/Example_Memory_Samples_3_2.png")
+    img_4_1.save("results/Example_Memory_Samples_4_1.png")
+    img_4_2.save("results/Example_Memory_Samples_4_2.png")
+    img_5_1.save("results/Example_Memory_Samples_5_1.png")
+    img_5_2.save("results/Example_Memory_Samples_5_2.png")
+    img_6_1.save("results/Example_Memory_Samples_6_1.png")
+    img_6_2.save("results/Example_Memory_Samples_6_2.png")
 
 
 if __name__ == "__main__":
