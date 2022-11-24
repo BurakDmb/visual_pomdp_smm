@@ -12,6 +12,7 @@ from visual_pomdp_smm.dataset.generate_uniform_memory_dataset import (
     generate_all_possible_states, tile_size)
 
 seq_len = 3
+ATLEAST_N = 2
 
 
 def generate_obs(env, state, start_room_obj, hallway_end, other_objs):
@@ -48,7 +49,7 @@ def main():
     eval_label = []
     eval_counter = 0
     for perm in generated_permutations:
-        if any(x in perm for x in states_eval):
+        if sum(x in perm for x in states_eval) >= ATLEAST_N:
             # eval_permutations.append(perm)
             eval_label.append(True)
             eval_counter += 1

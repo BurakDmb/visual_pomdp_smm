@@ -11,6 +11,7 @@ from visual_pomdp_smm.dataset.generate_uniform_dynamicobs_dataset import (
     agent_view_size, generate_all_possible_states, tile_size)
 
 seq_len = 3
+ATLEAST_N = 2
 random_sample_number = 1
 # Do not change the random_sample_number, it might break the code since
 # the memmap does not consider random sample number.
@@ -42,7 +43,7 @@ def main():
     eval_label = []
     eval_counter = 0
     for perm in generated_permutations:
-        if any(x in perm for x in states_eval):
+        if sum(x in perm for x in states_eval) >= ATLEAST_N:
             # eval_permutations.append(perm)
             eval_label.append(True)
             eval_counter += 1
