@@ -1,10 +1,11 @@
 import json
 import os
+import sys
 
 import numpy as np
 
-from visual_pomdp_smm.testing.test_utils import (
-    test_function, calculate_std_table)
+from visual_pomdp_smm.testing.test_utils import (calculate_std_table,
+                                                 test_function)
 
 resultsDict, freq_vs_losses_dict = test_function(
     prefix_name_inputs=[
@@ -15,7 +16,9 @@ resultsDict, freq_vs_losses_dict = test_function(
         # 'minigrid_sequence_dynamicobs_conv_binary_ae'
         ],
     save_figures=True,
-    include_all_experiments=True
+    include_all_experiments=True,
+    only_calculate_unique_comparison=bool(sys.argv[1]),
+    calculate_unique_comparison=bool(sys.argv[1])
 )
 
 json_dict = json.dumps(resultsDict, indent=2, default=str)
