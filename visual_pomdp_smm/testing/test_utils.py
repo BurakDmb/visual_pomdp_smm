@@ -143,6 +143,9 @@ def test_function(
                         sorted_frequencies = np.array(df_counts.tolist())
                         print("Total Count: ", sorted_frequencies.sum())
                         print("Total Unique Samples: ", len(sorted_frequencies))
+                        np.save(
+                            "save/Total_Count_And_Unique_Samples.npy",
+                            np.array([sorted_frequencies.sum(), len(sorted_frequencies)]))
 
                         all_data.imgs = unique_values
                         all_dataset = torch.utils.data.DataLoader(
@@ -271,16 +274,16 @@ def test_function(
                     print(
                         "Eval Class Dataset AvgLoss",
                         "{:.2e}".
-                        format(norm_eval_losses.sum()/eval_sample_number))
+                        format(resultsDict['eval_avgloss']))
                     print(
                         "Eval Class Dataset min and max normalized loss. Min: "
                         +
-                        "{:.2e}".format(norm_eval_losses.min()) +
+                        "{:.2e}".format(resultsDict['eval_minloss']) +
                         ", Max: " +
-                        "{:.2e}".format(norm_eval_losses.max()))
+                        "{:.2e}".format(resultsDict['eval_maxloss']))
                     print(
                         "Total Loss Percent diff (eval/test) (%): ",
-                        percent_difference)
+                        resultsDict['lossdiff'])
 
                 if save_figures and not only_calculate_unique_comparison:
 

@@ -19,7 +19,8 @@ resultsDict, freq_vs_losses_dict = test_function(
     save_figures=True,
     include_all_experiments=True,
     only_calculate_unique_comparison=boolean_flag,
-    calculate_unique_comparison=boolean_flag
+    calculate_unique_comparison=boolean_flag,
+    verbose=True
 )
 
 if boolean_flag:

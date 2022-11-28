@@ -13,8 +13,8 @@ from pomdp_tmaze_baselines.utils.AE import (Autoencoder, ConvAutoencoder,
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 
-from visual_pomdp_smm.envs.minigrid.minigrid_utils import (
-    MinigridGenericDataset)
+from visual_pomdp_smm.envs.minigrid.minigrid_utils import \
+    MinigridGenericDataset
 
 # torch.manual_seed(0)
 # torch.autograd.set_detect_anomaly(True)
@@ -318,13 +318,13 @@ def start_training(params):
         image_size_h=params['input_dims_h'],
         image_size_w=params['input_dims_w'],
         train_set_ratio=params['train_set_ratio'],
-        dataset_folder_name=params['dataset_folder_name'], use_cache=True)
+        dataset_folder_name=params['dataset_folder_name'], use_cache=False)
     test_data = MinigridGenericDataset(
         "data/", "test",
         image_size_h=params['input_dims_h'],
         image_size_w=params['input_dims_w'],
         train_set_ratio=params['train_set_ratio'],
-        dataset_folder_name=params['dataset_folder_name'], use_cache=True)
+        dataset_folder_name=params['dataset_folder_name'], use_cache=False)
 
     train_dataset = torch.utils.data.DataLoader(
         train_data, batch_size=params['batch_size'], shuffle=False,
