@@ -6,7 +6,7 @@ import numpy as np
 
 from visual_pomdp_smm.testing.test_utils import (calculate_std_table,
                                                  test_function)
-boolean_flag = True if sys.argv[1]=="True" else False
+boolean_flag = True if sys.argv[1] == "True" else False
 print(boolean_flag)
 resultsDict, freq_vs_losses_dict = test_function(
     prefix_name_inputs=[

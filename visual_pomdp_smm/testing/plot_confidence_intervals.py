@@ -117,8 +117,8 @@ def savePlotSRWithCI(indexes, values, keys, save_name, legend_prefix):
 
     # ax.set_ylim(0, 0.2)
     ax.legend(lines, legend_keys)
-    # fig.savefig(save_name, format="png", bbox_inches="tight")
-    fig.savefig(save_name, format="pdf")
+    # fig.savefig(save_name, format="png", bbox_inches="tight", dpi=600)
+    fig.savefig(save_name, format="pdf", dpi=600)
 
 
 def MemoryLatentComparison(path='save/csv/memory_conv_ae/'):
@@ -304,20 +304,20 @@ def plotFreqVsReconsLossWithCI(filename, legend_prefix, plot_first_n_val=10):
     ax1.set_xticks([])
     ax1.set_xlabel('Memory Samples', fontsize=18)
     ax1.set_ylabel(
-        'Visit Frequency (Normalized)', color='g', fontsize=18)
+        'Frequency (Normalized)', color='g', fontsize=18)
     ax1_twin.set_ylabel('Reconstruction Error', color='k', fontsize=18)
 
     ax2.set_xticks([])
     ax2.set_xlabel('Memory Samples', fontsize=18)
     ax2.set_ylabel(
-        'Visit Frequency (Normalized)', color='g', fontsize=18)
+        'Frequency (Normalized)', color='g', fontsize=18)
     ax2_twin.set_ylabel('Reconstruction Error', color='k',  fontsize=18)
 
     save_name = 'results/'+filename.replace("Dict.npy", "").rsplit("/", 1)[1]
     fig1.savefig(
-        save_name + "NoClipping.pdf", format="pdf")
+        save_name + "NoClipping.pdf", format="pdf", dpi=600)
     fig2.savefig(
-        save_name + "WithClipping.pdf", format="pdf")
+        save_name + "WithClipping.pdf", format="pdf", dpi=600)
 
     print("Read from file has been completed:", filename)
 
