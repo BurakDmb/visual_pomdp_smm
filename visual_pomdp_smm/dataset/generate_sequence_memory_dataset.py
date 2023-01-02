@@ -3,6 +3,7 @@ import os
 from itertools import permutations
 
 import numpy as np
+import ray
 from minigrid.core.world_object import Ball, Key
 from minigrid.envs import MemoryEnv
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
@@ -36,6 +37,7 @@ def main():
         os.makedirs("data/")
     if not os.path.isdir("data/SequenceMemory/"):
         os.makedirs("data/SequenceMemory/")
+    dataset_save_dir = "data/SequenceMemory/parquet_dataset"
 
     assert (seq_len > 1)
     print("Started generating all possible states")
@@ -73,122 +75,235 @@ def main():
         concat_obs_shape[1]*seq_len,
         concat_obs_shape[2])
 
+    all_shape = (
+        4*len_total_states,
+        *concat_obs_shape)
+    eval_shape = (
+        4*len_states_eval,
+        *concat_obs_shape)
+    noteval_shape = (
+        4*len_states_noteval,
+        *concat_obs_shape)
+
     # The number 4 comes from the 4 combination of key-door.
-    all_states_list = np.memmap(
-        'data/SequenceMemory/sample_all.npy',
-        dtype='uint8', mode='write',
-        shape=(
-            4*len_total_states,
-            *concat_obs_shape))
-    dataset_dict['all_states_shape'] = all_states_list.shape
+    # all_states_list = np.memmap(
+    #     'data/SequenceMemory/sample_all.npy',
+    #     dtype='uint8', mode='write',
+    #     shape=(
+    #         4*len_total_states,
+    #         *concat_obs_shape))
+    dataset_dict['all_states_shape'] = all_shape
 
-    eval_states_list = np.memmap(
-        'data/SequenceMemory/sample_eval.npy',
-        dtype='uint8', mode='write',
-        shape=(
-            4*len_states_eval,
-            *concat_obs_shape))
-    dataset_dict['eval_states_shape'] = eval_states_list.shape
+    # eval_states_list = np.memmap(
+    #     'data/SequenceMemory/sample_eval.npy',
+    #     dtype='uint8', mode='write',
+    #     shape=(
+    #         4*len_states_eval,
+    #         *concat_obs_shape))
+    dataset_dict['eval_states_shape'] = eval_shape
 
-    noteval_states_list = np.memmap(
-        'data/SequenceMemory/sample_noteval.npy',
-        dtype='uint8', mode='write',
-        shape=(
-            4*len_states_noteval,
-            *concat_obs_shape))
-    dataset_dict['noteval_states_shape'] = noteval_states_list.shape
+    # noteval_states_list = np.memmap(
+    #     'data/SequenceMemory/sample_noteval.npy',
+    #     dtype='uint8', mode='write',
+    #     shape=(
+    #         4*len_states_noteval,
+    #         *concat_obs_shape))
+    dataset_dict['noteval_states_shape'] = noteval_shape
+
+    dataset_sizemb = np.prod(all_shape)/(1024*1024)
+    print(
+        "Uncompressed Dataset will take total ammount of: ",
+        dataset_sizemb, " MB in memory.")
+    mem_total_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+    # Calculating the total memory, also reserving 6GB for system operations.
+    mem_total_mib = mem_total_bytes/(1024.**2) - (1024*6)
+    mem_total_mib = 1024*16
+    if mem_total_mib > dataset_sizemb:
+        dataset_partition_count = 1
+        partition_file_size = dataset_sizemb
+    else:
+        partition_file_size = np.power(2, np.floor(np.log2(mem_total_mib)))
+        dataset_partition_count = int(
+            np.ceil(dataset_sizemb / partition_file_size))
 
     print(
-        "Dataset will take of ammount: ",
-        all_states_list.size*all_states_list.itemsize/(1024*1024), " MB")
+        "The dataset will consist of ", dataset_partition_count,
+        " partition(s), each occupying a maximum of ",
+        partition_file_size, " MB.")
 
-    eval_i = 0
-    noteval_i = 0
-    for i, perm in enumerate(tqdm(generated_permutations)):
+    prev_dataset_index = -1
+    all_states_python_list = []
+    eval_states_python_list = []
+    noteval_states_python_list = []
 
-        # For each key and door combination (total of 4)
-        # 0: Start:Key, Doors: Ball-Key
-        observations = []
-        start_room_obj = Key
-        other_objs = [Ball, Key]
-        hallway_end = tile_size - 3
-        for state in perm:
-            observations.append(
-                generate_obs(
-                    env, state,
-                    start_room_obj,
-                    hallway_end, other_objs))
+    partition_arr = np.array_split(
+        generated_permutations, dataset_partition_count)
+    with tqdm(total=len(generated_permutations)) as pbar:
+        for dataset_index, epi_array in enumerate(partition_arr):
+            if prev_dataset_index != dataset_index:
+                if prev_dataset_index != -1:
 
-        concat_observations0 = np.hstack(observations)
+                    ray.init()
+                    ds_eval = ray.data.from_items(
+                        np.array(eval_states_python_list))
+                    ds_eval = ds_eval.add_column(
+                        "label", lambda df: "eval")
+                    ds_noteval = ray.data.from_items(
+                        np.array(noteval_states_python_list))
+                    ds_noteval = ds_noteval.add_column(
+                        "label", lambda df: "noteval")
 
-        # 1: Start:Key, Doors: Key-Ball
-        observations = []
-        start_room_obj = Key
-        other_objs = [Key, Ball]
-        hallway_end = tile_size - 3
-        for state in perm:
-            observations.append(
-                generate_obs(
-                    env, state,
-                    start_room_obj,
-                    hallway_end, other_objs))
+                    ds_all = ds_eval.union(ds_noteval)
+                    ds_all.write_parquet(dataset_save_dir)
+                    del ds_eval
+                    del ds_noteval
+                    del ds_all
+                    ray.shutdown()
 
-        concat_observations1 = np.hstack(observations)
+                prev_dataset_index = dataset_index
+                all_states_python_list = []
+                eval_states_python_list = []
+                noteval_states_python_list = []
 
-        # 2: Start:Ball, Doors: Ball-Key
-        observations = []
-        start_room_obj = Ball
-        other_objs = [Ball, Key]
-        hallway_end = tile_size - 3
-        for state in perm:
-            observations.append(
-                generate_obs(
-                    env, state,
-                    start_room_obj,
-                    hallway_end, other_objs))
+            eval_i = 0
+            noteval_i = 0
+            for i, perm in enumerate(epi_array):
 
-        concat_observations2 = np.hstack(observations)
+                # For each key and door combination (total of 4)
+                # 0: Start:Key, Doors: Ball-Key
+                observations = []
+                start_room_obj = Key
+                other_objs = [Ball, Key]
+                hallway_end = tile_size - 3
+                for state in perm:
+                    observations.append(
+                        generate_obs(
+                            env, state,
+                            start_room_obj,
+                            hallway_end, other_objs))
 
-        # 3: Start:Ball, Doors: Key-Ball
-        observations = []
-        start_room_obj = Ball
-        other_objs = [Key, Ball]
-        hallway_end = tile_size - 3
-        for state in perm:
-            observations.append(
-                generate_obs(
-                    env, state,
-                    start_room_obj,
-                    hallway_end, other_objs))
+                concat_observations0 = np.hstack(observations)
 
-        concat_observations3 = np.hstack(observations)
+                # 1: Start:Key, Doors: Key-Ball
+                observations = []
+                start_room_obj = Key
+                other_objs = [Key, Ball]
+                hallway_end = tile_size - 3
+                for state in perm:
+                    observations.append(
+                        generate_obs(
+                            env, state,
+                            start_room_obj,
+                            hallway_end, other_objs))
 
-        if eval_label[i]:
-            all_states_list[4*i+0] = concat_observations0
-            all_states_list[4*i+1] = concat_observations1
-            all_states_list[4*i+2] = concat_observations2
-            all_states_list[4*i+3] = concat_observations3
-            eval_states_list[4*eval_i+0] = concat_observations0
-            eval_states_list[4*eval_i+1] = concat_observations1
-            eval_states_list[4*eval_i+2] = concat_observations2
-            eval_states_list[4*eval_i+3] = concat_observations3
-            eval_i += 1
-        else:
-            all_states_list[4*i+0] = concat_observations0
-            all_states_list[4*i+1] = concat_observations1
-            all_states_list[4*i+2] = concat_observations2
-            all_states_list[4*i+3] = concat_observations3
-            noteval_states_list[4*noteval_i+0] = concat_observations0
-            noteval_states_list[4*noteval_i+1] = concat_observations1
-            noteval_states_list[4*noteval_i+2] = concat_observations2
-            noteval_states_list[4*noteval_i+3] = concat_observations3
-            noteval_i += 1
+                concat_observations1 = np.hstack(observations)
 
-    all_states_list.flush()
-    eval_states_list.flush()
-    noteval_states_list.flush()
+                # 2: Start:Ball, Doors: Ball-Key
+                observations = []
+                start_room_obj = Ball
+                other_objs = [Ball, Key]
+                hallway_end = tile_size - 3
+                for state in perm:
+                    observations.append(
+                        generate_obs(
+                            env, state,
+                            start_room_obj,
+                            hallway_end, other_objs))
+
+                concat_observations2 = np.hstack(observations)
+
+                # 3: Start:Ball, Doors: Key-Ball
+                observations = []
+                start_room_obj = Ball
+                other_objs = [Key, Ball]
+                hallway_end = tile_size - 3
+                for state in perm:
+                    observations.append(
+                        generate_obs(
+                            env, state,
+                            start_room_obj,
+                            hallway_end, other_objs))
+
+                concat_observations3 = np.hstack(observations)
+
+                if eval_label[i]:
+                    all_states_python_list.append(concat_observations0)
+                    all_states_python_list.append(concat_observations1)
+                    all_states_python_list.append(concat_observations2)
+                    all_states_python_list.append(concat_observations3)
+
+                    eval_states_python_list.append(concat_observations0)
+                    eval_states_python_list.append(concat_observations1)
+                    eval_states_python_list.append(concat_observations2)
+                    eval_states_python_list.append(concat_observations3)
+
+                    # all_states_list[4*i+0] = concat_observations0
+                    # all_states_list[4*i+1] = concat_observations1
+                    # all_states_list[4*i+2] = concat_observations2
+                    # all_states_list[4*i+3] = concat_observations3
+                    # eval_states_list[4*eval_i+0] = concat_observations0
+                    # eval_states_list[4*eval_i+1] = concat_observations1
+                    # eval_states_list[4*eval_i+2] = concat_observations2
+                    # eval_states_list[4*eval_i+3] = concat_observations3
+                    eval_i += 1
+                else:
+                    all_states_python_list.append(concat_observations0)
+                    noteval_states_python_list.append(concat_observations0)
+
+                    all_states_python_list.append(concat_observations1)
+                    noteval_states_python_list.append(concat_observations1)
+
+                    all_states_python_list.append(concat_observations2)
+                    noteval_states_python_list.append(concat_observations2)
+
+                    all_states_python_list.append(concat_observations3)
+                    noteval_states_python_list.append(concat_observations3)
+                    # all_states_list[4*i+0] = concat_observations0
+                    # all_states_list[4*i+1] = concat_observations1
+                    # all_states_list[4*i+2] = concat_observations2
+                    # all_states_list[4*i+3] = concat_observations3
+                    # noteval_states_list[4*noteval_i+0] = concat_observations0
+                    # noteval_states_list[4*noteval_i+1] = concat_observations1
+                    # noteval_states_list[4*noteval_i+2] = concat_observations2
+                    # noteval_states_list[4*noteval_i+3] = concat_observations3
+                    noteval_i += 1
+
+                pbar.update(1)
+
+    ray.init()
+    ds_eval = ray.data.from_items(
+        np.array(eval_states_python_list))
+    ds_eval = ds_eval.add_column(
+        "label", lambda df: "eval")
+    ds_noteval = ray.data.from_items(
+        np.array(noteval_states_python_list))
+    ds_noteval = ds_noteval.add_column(
+        "label", lambda df: "noteval")
+
+    ds_all = ds_eval.union(ds_noteval)
+    ds_all.write_parquet(dataset_save_dir)
+    del ds_eval
+    del ds_noteval
+    del ds_all
+    ray.shutdown()
+
+    # all_states_list.flush()
+    # eval_states_list.flush()
+    # noteval_states_list.flush()
     json.dump(dataset_dict, open(
         "data/SequenceMemory/dataset_dict.json", 'w'))
+
+    # ds_eval = ray.data.from_items(eval_states_list)
+    # ds_eval = ds_eval.add_column(
+    #     "label", lambda df: "eval")
+    # ds_noteval = ray.data.from_items(noteval_states_list)
+    # ds_noteval = ds_noteval.add_column(
+    #     "label", lambda df: "noteval")
+
+    # ds_all = ds_eval.union(ds_noteval)
+    # ds_eval.write_parquet("data/SequenceMemory/parquet_eval_dataset")
+    # ds_noteval.write_parquet("data/SequenceMemory/parquet_noteval_dataset")
+    # read_ds = ray.data.read_parquet("data/SequenceMemory/parquet_dataset")
 
 
 if __name__ == "__main__":

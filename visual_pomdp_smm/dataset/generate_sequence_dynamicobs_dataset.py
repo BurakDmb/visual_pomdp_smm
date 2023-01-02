@@ -3,6 +3,7 @@ import os
 from itertools import permutations
 
 import numpy as np
+import ray
 from minigrid.envs import DynamicObstaclesEnv
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
 from tqdm.auto import tqdm
@@ -30,6 +31,7 @@ def main():
         os.makedirs("data/")
     if not os.path.isdir("data/SequenceDynamicObs/"):
         os.makedirs("data/SequenceDynamicObs/")
+    dataset_save_dir = "data/SequenceDynamicObs/parquet_dataset"
 
     assert (seq_len > 1)
     print("Started generating all possible states")
@@ -69,63 +71,161 @@ def main():
         concat_obs_shape[1]*seq_len,
         concat_obs_shape[2])
 
-    all_states_list = np.memmap(
-        'data/SequenceDynamicObs/sample_all.npy',
-        dtype='uint8', mode='write',
-        shape=(
-            len_total_states,
-            *concat_obs_shape))
-    dataset_dict['all_states_shape'] = all_states_list.shape
+    all_shape = (
+        len_total_states,
+        *concat_obs_shape)
+    eval_shape = (
+        len_states_eval,
+        *concat_obs_shape)
+    noteval_shape = (
+        len_states_noteval,
+        *concat_obs_shape)
 
-    eval_states_list = np.memmap(
-        'data/SequenceDynamicObs/sample_eval.npy',
-        dtype='uint8', mode='write',
-        shape=(
-            len_states_eval,
-            *concat_obs_shape))
-    dataset_dict['eval_states_shape'] = eval_states_list.shape
+    # all_states_list = np.memmap(
+    #     'data/SequenceDynamicObs/sample_all.npy',
+    #     dtype='uint8', mode='write',
+    #     shape=(
+    #         len_total_states,
+    #         *concat_obs_shape))
+    dataset_dict['all_states_shape'] = all_shape
 
-    noteval_states_list = np.memmap(
-        'data/SequenceDynamicObs/sample_noteval.npy',
-        dtype='uint8', mode='write',
-        shape=(
-            len_states_noteval,
-            *concat_obs_shape))
-    dataset_dict['noteval_states_shape'] = noteval_states_list.shape
+    # eval_states_list = np.memmap(
+    #     'data/SequenceDynamicObs/sample_eval.npy',
+    #     dtype='uint8', mode='write',
+    #     shape=(
+    #         len_states_eval,
+    #         *concat_obs_shape))
+    dataset_dict['eval_states_shape'] = eval_shape
+
+    # noteval_states_list = np.memmap(
+    #     'data/SequenceDynamicObs/sample_noteval.npy',
+    #     dtype='uint8', mode='write',
+    #     shape=(
+    #         len_states_noteval,
+    #         *concat_obs_shape))
+    dataset_dict['noteval_states_shape'] = noteval_shape
+
+    dataset_sizemb = np.prod(all_shape)/(1024*1024)
+    print(
+        "Uncompressed Dataset will take total ammount of: ",
+        dataset_sizemb, " MB in memory.")
+    mem_total_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+    # Calculating the total memory, also reserving 6GB for system operations.
+    mem_total_mib = mem_total_bytes/(1024.**2) - (1024*6)
+    mem_total_mib = 1024*16
+    if mem_total_mib > dataset_sizemb:
+        dataset_partition_count = 1
+        partition_file_size = dataset_sizemb
+    else:
+        partition_file_size = np.power(2, np.floor(np.log2(mem_total_mib)))
+        dataset_partition_count = int(
+            np.ceil(dataset_sizemb / partition_file_size))
 
     print(
-        "Dataset will take of ammount: ",
-        all_states_list.size*all_states_list.itemsize/(1024*1024), " MB")
+        "The dataset will consist of ", dataset_partition_count,
+        " partition(s), each occupying a maximum of ",
+        partition_file_size, " MB.")
 
-    eval_i = 0
-    noteval_i = 0
-    for i, perm in enumerate(tqdm(generated_permutations)):
-        for j in range(random_sample_number):
-            if eval_label[i]:
-                observations = []
-                for state in perm:
-                    observations.append(
-                        generate_obs(env, state))
-                concat_observations = np.hstack(observations)
+    prev_dataset_index = -1
+    all_states_python_list = []
+    eval_states_python_list = []
+    noteval_states_python_list = []
 
-                all_states_list[i] = concat_observations
-                eval_states_list[eval_i] = concat_observations
-                eval_i += 1
-            else:
-                observations = []
-                for state in perm:
-                    observations.append(
-                        generate_obs(env, state))
-                concat_observations = np.hstack(observations)
-                all_states_list[i] = concat_observations
-                noteval_states_list[noteval_i] = concat_observations
-                noteval_i += 1
+    partition_arr = np.array_split(
+        generated_permutations, dataset_partition_count)
+    with tqdm(total=len(generated_permutations)) as pbar:
+        for dataset_index, epi_array in enumerate(partition_arr):
+            if prev_dataset_index != dataset_index:
+                if prev_dataset_index != -1:
 
-    all_states_list.flush()
-    eval_states_list.flush()
-    noteval_states_list.flush()
+                    ray.init()
+                    ds_eval = ray.data.from_items(
+                        np.array(eval_states_python_list))
+                    ds_eval = ds_eval.add_column(
+                        "label", lambda df: "eval")
+                    ds_noteval = ray.data.from_items(
+                        np.array(noteval_states_python_list))
+                    ds_noteval = ds_noteval.add_column(
+                        "label", lambda df: "noteval")
+
+                    ds_all = ds_eval.union(ds_noteval)
+                    ds_all.write_parquet(dataset_save_dir)
+                    del ds_eval
+                    del ds_noteval
+                    del ds_all
+                    ray.shutdown()
+
+                prev_dataset_index = dataset_index
+                all_states_python_list = []
+                eval_states_python_list = []
+                noteval_states_python_list = []
+
+            eval_i = 0
+            noteval_i = 0
+            for i, perm in enumerate(epi_array):
+                for j in range(random_sample_number):
+                    if eval_label[i]:
+                        observations = []
+                        for state in perm:
+                            observations.append(
+                                generate_obs(env, state))
+                        concat_observations = np.hstack(observations)
+
+                        all_states_python_list.append(concat_observations)
+                        eval_states_python_list.append(concat_observations)
+                        # all_states_list[i] = concat_observations
+                        # eval_states_list[eval_i] = concat_observations
+                        eval_i += 1
+                    else:
+                        observations = []
+                        for state in perm:
+                            observations.append(
+                                generate_obs(env, state))
+                        concat_observations = np.hstack(observations)
+
+                        all_states_python_list.append(concat_observations)
+                        noteval_states_python_list.append(concat_observations)
+                        # all_states_list[i] = concat_observations
+                        # noteval_states_list[noteval_i] = concat_observations
+                        noteval_i += 1
+
+                pbar.update(1)
+
+    ray.init()
+    ds_eval = ray.data.from_items(
+        np.array(eval_states_python_list))
+    ds_eval = ds_eval.add_column(
+        "label", lambda df: "eval")
+    ds_noteval = ray.data.from_items(
+        np.array(noteval_states_python_list))
+    ds_noteval = ds_noteval.add_column(
+        "label", lambda df: "noteval")
+
+    ds_all = ds_eval.union(ds_noteval)
+    ds_all.write_parquet(dataset_save_dir)
+    del ds_eval
+    del ds_noteval
+    del ds_all
+    ray.shutdown()
+
+    # all_states_list.flush()
+    # eval_states_list.flush()
+    # noteval_states_list.flush()
     json.dump(dataset_dict, open(
         "data/SequenceDynamicObs/dataset_dict.json", 'w'))
+
+    # ds_eval = ray.data.from_items(eval_states_list)
+    # ds_eval = ds_eval.add_column(
+    #     "label", lambda df: "eval")
+    # ds_noteval = ray.data.from_items(noteval_states_list)
+    # ds_noteval = ds_noteval.add_column(
+    #     "label", lambda df: "noteval")
+
+    # ds_all = ds_eval.union(ds_noteval)
+    # ds_eval.write_parquet("data/SequenceDynamicObs/parquet_eval_dataset")
+    # ds_noteval.write_parquet("data/SequenceDynamicObs/parquet_noteval_dataset")
+    # read_ds = ray.data.read_parquet(
+    #   "data/SequenceDynamicObs/parquet_dataset")
 
 
 if __name__ == "__main__":

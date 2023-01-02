@@ -1,21 +1,21 @@
 # visual_pomdp_smm
 
 Uses Gym-Minigrid (https://github.com/maximecb/gym-minigrid)
-## Requirements
+
+# Requirements with ray framework.
 
 ```
 git clone https://github.com/BurakDmb/pomdp_tmaze_baselines.git
 cd pomdp_tmaze_baselines
 
-conda create -n pomdp python=3.8 -y
+conda create -n pomdp python=3.10 -y
 conda activate pomdp
-conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch -y
-conda install -c conda-forge gym scikit-learn profilehooks progressbar matplotlib tensorboard numpy pandas cloudpickle optuna mysqlclient mysql-client plotly flake8 -y
-conda install pip -y
-pip install tensorboard-reducer --no-dependencies --trusted-host pypi.org --trusted-host files.pythonhosted.org
-pip install git+https://github.com/DLR-RM/stable-baselines3 --no-dependencies --trusted-host pypi.org --trusted-host files.pythonhosted.org
-pip install git+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib --no-dependencies --trusted-host pypi.org --trusted-host files.pythonhosted.org
-pip install gym-minigrid torchsummary --no-dependencies  --trusted-host pypi.org --trusted-host files.pythonhosted.org
+mamba install pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
+
+# Note: Currently, ray framework is installed from the daily releases. In the future, it is recommended to download from the stable releases.
+pip install "ray[all] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl"
+
+pip install scikit-learn profilehooks progressbar matplotlib tensorboard plotly flake8 tqdm minigrid tensorboard-reducer torchinfo pyarrow
 python setup.py develop
 
 cd ..
