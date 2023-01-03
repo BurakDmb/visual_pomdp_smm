@@ -70,7 +70,7 @@ def generate_all_possible_states():
 
 
 def main():
-
+    ray.init(object_store_memory=32*10**9)
     states, states_eval, states_noteval = generate_all_possible_states()
 
     env = MemoryEnv(size=tile_size, agent_view_size=5)
@@ -151,7 +151,6 @@ def main():
             if prev_dataset_index != dataset_index:
                 if prev_dataset_index != -1:
 
-                    ray.init()
                     ds_eval = ray.data.from_items(
                         np.array(eval_states_python_list))
                     ds_eval = ds_eval.add_column(
@@ -166,10 +165,11 @@ def main():
                     del ds_eval
                     del ds_noteval
                     del ds_all
-                    ray.shutdown()
 
                 prev_dataset_index = dataset_index
                 # all_states_python_list = []
+                del eval_states_python_list
+                del noteval_states_python_list
                 eval_states_python_list = []
                 noteval_states_python_list = []
 
@@ -183,7 +183,7 @@ def main():
                     obs = env.observation(
                         env.env.observation(env.env.env.gen_obs()))
                     # all_states_python_list.append(obs)
-                    eval_states_python_list.append(obs)
+                    eval_states_python_list.append(obs.copy())
                     # all_states_list[len_total_states * epi + i] = obs
                     # eval_states_list[len_states_eval * epi + j] = obs
                     i += 1
@@ -195,13 +195,12 @@ def main():
                         env.env.observation(env.env.env.gen_obs()))
 
                     # all_states_python_list.append(obs)
-                    noteval_states_python_list.append(obs)
+                    noteval_states_python_list.append(obs.copy())
                     # all_states_list[len_total_states * epi + i] = obs
                     # noteval_states_list[len_states_noteval * epi + j] = obs
                     i += 1
                 pbar.update(1)
 
-    ray.init()
     ds_eval = ray.data.from_items(
         np.array(eval_states_python_list))
     ds_eval = ds_eval.add_column(
@@ -216,7 +215,6 @@ def main():
     del ds_eval
     del ds_noteval
     del ds_all
-    ray.shutdown()
 
     # all_states_list.flush()
     # eval_states_list.flush()

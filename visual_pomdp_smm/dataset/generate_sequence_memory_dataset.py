@@ -33,6 +33,7 @@ def generate_obs(env, state, start_room_obj, hallway_end, other_objs):
 
 
 def main():
+    ray.init(object_store_memory=32*10**9)
     if not os.path.isdir("data/"):
         os.makedirs("data/")
     if not os.path.isdir("data/SequenceMemory/"):
@@ -117,7 +118,7 @@ def main():
     mem_total_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
     # Calculating the total memory, also reserving 6GB for system operations.
     mem_total_mib = mem_total_bytes/(1024.**2) - (1024*6)
-    mem_total_mib = 1024*16
+    # mem_total_mib = 1024
     if mem_total_mib > dataset_sizemb:
         dataset_partition_count = 1
         partition_file_size = dataset_sizemb
@@ -143,7 +144,6 @@ def main():
             if prev_dataset_index != dataset_index:
                 if prev_dataset_index != -1:
 
-                    ray.init()
                     ds_eval = ray.data.from_items(
                         np.array(eval_states_python_list))
                     ds_eval = ds_eval.add_column(
@@ -158,7 +158,6 @@ def main():
                     del ds_eval
                     del ds_noteval
                     del ds_all
-                    ray.shutdown()
 
                 prev_dataset_index = dataset_index
                 all_states_python_list = []
@@ -227,15 +226,15 @@ def main():
                 concat_observations3 = np.hstack(observations)
 
                 if eval_label[i]:
-                    all_states_python_list.append(concat_observations0)
-                    all_states_python_list.append(concat_observations1)
-                    all_states_python_list.append(concat_observations2)
-                    all_states_python_list.append(concat_observations3)
+                    all_states_python_list.append(concat_observations0.copy())
+                    all_states_python_list.append(concat_observations1.copy())
+                    all_states_python_list.append(concat_observations2.copy())
+                    all_states_python_list.append(concat_observations3.copy())
 
-                    eval_states_python_list.append(concat_observations0)
-                    eval_states_python_list.append(concat_observations1)
-                    eval_states_python_list.append(concat_observations2)
-                    eval_states_python_list.append(concat_observations3)
+                    eval_states_python_list.append(concat_observations0.copy())
+                    eval_states_python_list.append(concat_observations1.copy())
+                    eval_states_python_list.append(concat_observations2.copy())
+                    eval_states_python_list.append(concat_observations3.copy())
 
                     # all_states_list[4*i+0] = concat_observations0
                     # all_states_list[4*i+1] = concat_observations1
@@ -247,17 +246,23 @@ def main():
                     # eval_states_list[4*eval_i+3] = concat_observations3
                     eval_i += 1
                 else:
-                    all_states_python_list.append(concat_observations0)
-                    noteval_states_python_list.append(concat_observations0)
+                    all_states_python_list.append(
+                        concat_observations0.copy())
+                    all_states_python_list.append(
+                        concat_observations1.copy())
+                    all_states_python_list.append(
+                        concat_observations2.copy())
+                    all_states_python_list.append(
+                        concat_observations3.copy())
 
-                    all_states_python_list.append(concat_observations1)
-                    noteval_states_python_list.append(concat_observations1)
-
-                    all_states_python_list.append(concat_observations2)
-                    noteval_states_python_list.append(concat_observations2)
-
-                    all_states_python_list.append(concat_observations3)
-                    noteval_states_python_list.append(concat_observations3)
+                    noteval_states_python_list.append(
+                        concat_observations0.copy())
+                    noteval_states_python_list.append(
+                        concat_observations1.copy())
+                    noteval_states_python_list.append(
+                        concat_observations2.copy())
+                    noteval_states_python_list.append(
+                        concat_observations3.copy())
                     # all_states_list[4*i+0] = concat_observations0
                     # all_states_list[4*i+1] = concat_observations1
                     # all_states_list[4*i+2] = concat_observations2
@@ -270,7 +275,6 @@ def main():
 
                 pbar.update(1)
 
-    ray.init()
     ds_eval = ray.data.from_items(
         np.array(eval_states_python_list))
     ds_eval = ds_eval.add_column(
@@ -285,7 +289,6 @@ def main():
     del ds_eval
     del ds_noteval
     del ds_all
-    ray.shutdown()
 
     # all_states_list.flush()
     # eval_states_list.flush()
