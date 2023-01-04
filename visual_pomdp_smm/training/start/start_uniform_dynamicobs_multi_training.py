@@ -3,7 +3,7 @@ import torch
 
 
 if __name__ == '__main__':
-    from visual_pomdp_smm.training.params_uniform_memory_training\
+    from visual_pomdp_smm.training.params.params_uniform_dynamicobs_training\
         import params_list
     NUM_GPUS = torch.cuda.device_count()
     PROC_PER_GPU = 4

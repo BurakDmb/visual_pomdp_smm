@@ -1,7 +1,7 @@
 
 if __name__ == "__main__":
-    from visual_pomdp_smm.training.params_sequence_memory_training\
-        import params_list
+    from visual_pomdp_smm.training.params.\
+        params_minigrid_training import params_list
     from visual_pomdp_smm.training.train_utils import start_training
 
     import torch.multiprocessing as mp

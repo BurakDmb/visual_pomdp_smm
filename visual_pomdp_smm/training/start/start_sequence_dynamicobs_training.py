@@ -1,6 +1,6 @@
 
 if __name__ == "__main__":
-    from visual_pomdp_smm.training.params_uniform_memory_training\
+    from visual_pomdp_smm.training.params.params_sequence_dynamicobs_training\
         import params_list
     from visual_pomdp_smm.training.train_utils import start_training
 
