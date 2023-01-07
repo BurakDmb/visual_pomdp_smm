@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from itertools import permutations
 
 import numpy as np
@@ -7,9 +8,10 @@ import ray
 from minigrid.envs import DynamicObstaclesEnv
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
 from tqdm.auto import tqdm
+from dataset_utils import resize_obs
 
 from visual_pomdp_smm.dataset.generate_uniform_dynamicobs_dataset import (
-    agent_view_size, generate_all_possible_states, tile_size)
+    agent_view_size, generate_all_possible_states, tile_size, obs_pixel_size)
 
 seq_len = 3
 ATLEAST_N = 2
@@ -28,11 +30,13 @@ def generate_obs(env, state):
 
 def main():
     ray.init(object_store_memory=32*10**9)
-    if not os.path.isdir("data/"):
-        os.makedirs("data/")
-    if not os.path.isdir("data/SequenceDynamicObs/"):
-        os.makedirs("data/SequenceDynamicObs/")
     dataset_save_dir = "data/SequenceDynamicObs/parquet_dataset"
+
+    if not os.path.isdir(dataset_save_dir):
+        os.makedirs(dataset_save_dir)
+    else:
+        shutil.rmtree(dataset_save_dir, ignore_errors=True)
+        os.makedirs(dataset_save_dir)
 
     assert (seq_len > 1)
     print("Started generating all possible states")
@@ -105,6 +109,8 @@ def main():
     #         len_states_noteval,
     #         *concat_obs_shape))
     dataset_dict['noteval_states_shape'] = noteval_shape
+    dataset_dict['eval_class_value'] = 0
+    dataset_dict['noteval_class_value'] = 1
 
     dataset_sizemb = np.prod(all_shape)/(1024*1024)
     print(
@@ -142,11 +148,11 @@ def main():
                     ds_eval = ray.data.from_items(
                         np.array(eval_states_python_list))
                     ds_eval = ds_eval.add_column(
-                        "label", lambda df: "eval")
+                        "label", lambda df: 0)
                     ds_noteval = ray.data.from_items(
                         np.array(noteval_states_python_list))
                     ds_noteval = ds_noteval.add_column(
-                        "label", lambda df: "noteval")
+                        "label", lambda df: 1)
 
                     ds_all = ds_eval.union(ds_noteval)
                     ds_all.write_parquet(dataset_save_dir)
@@ -166,8 +172,8 @@ def main():
                     if eval_label[i]:
                         observations = []
                         for state in perm:
-                            observations.append(
-                                generate_obs(env, state))
+                            observations.append(resize_obs(
+                                generate_obs(env, state), obs_pixel_size))
                         concat_observations = np.hstack(observations)
 
                         all_states_python_list.append(
@@ -180,8 +186,8 @@ def main():
                     else:
                         observations = []
                         for state in perm:
-                            observations.append(
-                                generate_obs(env, state))
+                            observations.append(resize_obs(
+                                generate_obs(env, state), obs_pixel_size))
                         concat_observations = np.hstack(observations)
 
                         all_states_python_list.append(
@@ -197,11 +203,11 @@ def main():
     ds_eval = ray.data.from_items(
         np.array(eval_states_python_list))
     ds_eval = ds_eval.add_column(
-        "label", lambda df: "eval")
+        "label", lambda df: 0)
     ds_noteval = ray.data.from_items(
         np.array(noteval_states_python_list))
     ds_noteval = ds_noteval.add_column(
-        "label", lambda df: "noteval")
+        "label", lambda df: 1)
 
     ds_all = ds_eval.union(ds_noteval)
     ds_all.write_parquet(dataset_save_dir)
@@ -217,10 +223,10 @@ def main():
 
     # ds_eval = ray.data.from_items(eval_states_list)
     # ds_eval = ds_eval.add_column(
-    #     "label", lambda df: "eval")
+    #     "label", lambda df: 0)
     # ds_noteval = ray.data.from_items(noteval_states_list)
     # ds_noteval = ds_noteval.add_column(
-    #     "label", lambda df: "noteval")
+    #     "label", lambda df: 1)
 
     # ds_all = ds_eval.union(ds_noteval)
     # ds_eval.write_parquet("data/SequenceDynamicObs/parquet_eval_dataset")

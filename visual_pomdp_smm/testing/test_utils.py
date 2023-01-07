@@ -57,10 +57,12 @@ def test_model(
         latentArray, test_losses, lossesArray
 
 
+# TODO: Need to implement this function with ray framework.
 def test_function(
         prefix_name_inputs, random_visualize=False, save_figures=False,
         verbose=False, include_all_experiments=False, n_frequency=500,
-        only_calculate_unique_comparison=False, calculate_unique_comparison=True):
+        only_calculate_unique_comparison=False,
+        calculate_unique_comparison=True):
 
     dirFiles = os.listdir('save/json')
     if type(prefix_name_inputs) is not list:
@@ -142,10 +144,13 @@ def test_function(
                                 all_data.imgs.shape[3])
                         sorted_frequencies = np.array(df_counts.tolist())
                         print("Total Count: ", sorted_frequencies.sum())
-                        print("Total Unique Samples: ", len(sorted_frequencies))
+                        print(
+                            "Total Unique Samples: ", len(sorted_frequencies))
                         np.save(
                             "save/Total_Count_And_Unique_Samples.npy",
-                            np.array([sorted_frequencies.sum(), len(sorted_frequencies)]))
+                            np.array([
+                                sorted_frequencies.sum(),
+                                len(sorted_frequencies)]))
 
                         all_data.imgs = unique_values
                         all_dataset = torch.utils.data.DataLoader(
@@ -176,7 +181,8 @@ def test_function(
                             use_cache=False)
 
                         eval_class_dataset = torch.utils.data.DataLoader(
-                            eval_class_data, batch_size=params['batch_size']*10,
+                            eval_class_data,
+                            batch_size=params['batch_size']*10,
                             shuffle=False,
                             num_workers=16, pin_memory=False)
 
@@ -209,13 +215,16 @@ def test_function(
                     #     sorted_frequencies,
                     #     sorted_indices,
                     #     normalized_top_n_losses_array)
-                    freq_vs_losses_dict['sorted_frequencies'] = sorted_frequencies
-                    freq_vs_losses_dict['total_unique_samples'] = len(
-                        sorted_frequencies)
+                    freq_vs_losses_dict[
+                        'sorted_frequencies'] = sorted_frequencies
+                    freq_vs_losses_dict[
+                        'total_unique_samples'] = len(sorted_frequencies)
                     # freq_vs_losses_dict['sorted_indices'] = sorted_indices
-                    freq_vs_losses_dict['normalized_top_n_losses_array'] = \
+                    freq_vs_losses_dict[
+                        'normalized_top_n_losses_array'] = \
                         normalized_top_n_losses_array
-                    freq_vs_losses_dict['normalized_top_n_losses_array_clip'] = \
+                    freq_vs_losses_dict[
+                        'normalized_top_n_losses_array_clip'] = \
                         normalized_top_n_losses_array_clip
 
                 if not only_calculate_unique_comparison:

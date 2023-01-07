@@ -3,9 +3,11 @@ import os
 
 import numpy as np
 import ray
+import shutil
 from minigrid.envs import DynamicObstaclesEnv
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
 from tqdm.auto import tqdm
+from dataset_utils import resize_obs
 
 # Total sample number is 230400
 tile_size = 9
@@ -15,6 +17,7 @@ k = tile_size//2
 
 # Fixed, Could not be changed
 agent_view_size = 5
+obs_pixel_size = 48
 
 
 def generate_all_possible_states():
@@ -89,11 +92,13 @@ def main():
     env = RGBImgPartialObsWrapper(env)
     env = ImgObsWrapper(env)
 
-    if not os.path.isdir("data/"):
-        os.makedirs("data/")
-    if not os.path.isdir("data/UniformDynamicObs/"):
-        os.makedirs("data/UniformDynamicObs/")
     dataset_save_dir = "data/UniformDynamicObs/parquet_dataset"
+
+    if not os.path.isdir(dataset_save_dir):
+        os.makedirs(dataset_save_dir)
+    else:
+        shutil.rmtree(dataset_save_dir, ignore_errors=True)
+        os.makedirs(dataset_save_dir)
 
     dataset_dict = {}
     len_total_states = len(states)
@@ -131,6 +136,8 @@ def main():
     #         len_states_noteval * epi_number,
     #         *env.env.observation_space.spaces["image"].shape))
     dataset_dict['noteval_states_shape'] = noteval_shape
+    dataset_dict['eval_class_value'] = 0
+    dataset_dict['noteval_class_value'] = 1
 
     dataset_sizemb = np.prod(all_shape)/(1024*1024)
     print(
@@ -168,11 +175,11 @@ def main():
                     ds_eval = ray.data.from_items(
                         np.array(eval_states_python_list))
                     ds_eval = ds_eval.add_column(
-                        "label", lambda df: "eval")
+                        "label", lambda df: 0)
                     ds_noteval = ray.data.from_items(
                         np.array(noteval_states_python_list))
                     ds_noteval = ds_noteval.add_column(
-                        "label", lambda df: "noteval")
+                        "label", lambda df: 1)
 
                     ds_all = ds_eval.union(ds_noteval)
                     ds_all.write_parquet(
@@ -196,8 +203,9 @@ def main():
                     obs, info = env.reset()
                     # obs = env.observation(
                     #     env.env.observation(env.env.env.gen_obs()))
-                    all_states_python_list.append(obs.copy())
-                    eval_states_python_list.append(obs.copy())
+                    obs_resized = resize_obs(obs, obs_pixel_size)
+                    all_states_python_list.append(obs_resized)
+                    eval_states_python_list.append(obs_resized)
                     # all_states_list[len_total_states * epi + i] = obs
                     # eval_states_list[len_states_eval * epi + j] = obs
                     i += 1
@@ -208,8 +216,9 @@ def main():
                     obs, info = env.reset()
                     # obs = env.observation(
                     #     env.env.observation(env.env.env.gen_obs()))
-                    all_states_python_list.append(obs.copy())
-                    noteval_states_python_list.append(obs.copy())
+                    obs_resized = resize_obs(obs, obs_pixel_size)
+                    all_states_python_list.append(obs_resized)
+                    noteval_states_python_list.append(obs_resized)
                     # all_states_list[len_total_states * epi + i] = obs
                     # noteval_states_list[len_states_noteval * epi + j] = obs
                     i += 1
@@ -218,11 +227,11 @@ def main():
     ds_eval = ray.data.from_items(
         np.array(eval_states_python_list))
     ds_eval = ds_eval.add_column(
-        "label", lambda df: "eval")
+        "label", lambda df: 0)
     ds_noteval = ray.data.from_items(
         np.array(noteval_states_python_list))
     ds_noteval = ds_noteval.add_column(
-        "label", lambda df: "noteval")
+        "label", lambda df: 1)
 
     ds_all = ds_eval.union(ds_noteval)
     ds_all.write_parquet(dataset_save_dir)
@@ -238,10 +247,10 @@ def main():
 
     # ds_eval = ray.data.from_items(eval_states_list)
     # ds_eval = ds_eval.add_column(
-    #     "label", lambda df: "eval")
+    #     "label", lambda df: 0)
     # ds_noteval = ray.data.from_items(noteval_states_list)
     # ds_noteval = ds_noteval.add_column(
-    #     "label", lambda df: "noteval")
+    #     "label", lambda df: 1)
 
     # ds_all = ds_eval.union(ds_noteval)
     # ds_eval.write_parquet("data/UniformDynamicObs/parquet_eval_dataset")
