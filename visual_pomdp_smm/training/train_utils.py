@@ -424,7 +424,7 @@ def start_ray_training(params):
     preprocessor = TorchVisionPreprocessor(
         ["__value__"], transform=transform, batched=True
     )
-    ds = preprocessor.transform(ds)
+    # ds = preprocessor.transform(ds)
     # Note: If randomization takes too long, random block order could be used.
     # https://docs.ray.io/en/master/data/dataset-ml-preprocessing.html#random-block-order
     train_dataset, test_dataset = ds.train_test_split(
@@ -463,7 +463,8 @@ def start_ray_training(params):
         datasets=datasets,
         scaling_config=scaling_config,
         train_loop_config=train_loop_config,
-        run_config=run_config
+        run_config=run_config,
+        preprocessor=preprocessor
     )
     # result = trainer.fit()
     trainer.fit()
