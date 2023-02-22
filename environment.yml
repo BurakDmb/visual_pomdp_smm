@@ -1,3 +1,4 @@
+# Legacy, not used anymore, TODO: Remove.
 name: visualpomdp
 channels:
   - pytorch

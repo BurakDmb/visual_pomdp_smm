@@ -14,7 +14,7 @@ tile_size = 21
 sample_per_episode = ((tile_size-2) + 5)*4
 epi_number = int(230400/sample_per_episode)
 k = tile_size//2
-obs_pixel_size = 48
+obs_pixel_size = 40
 
 
 def generate_all_possible_states():

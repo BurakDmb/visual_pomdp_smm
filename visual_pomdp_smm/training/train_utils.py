@@ -294,7 +294,7 @@ def train_ae_ray(config):
         session.report(
             {},
             checkpoint=Checkpoint.from_dict(
-                dict(epoch=epoch, model=autoencoder.state_dict())
+                dict(epoch=epoch, model=autoencoder)
             ),
         )
     saveModelWithParams(autoencoder, log_name, filename_date, params)
