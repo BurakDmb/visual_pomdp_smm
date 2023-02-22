@@ -19,7 +19,7 @@ if __name__ == "__main__":
         'input_dims_w': 40,
         'hidden_size': 128,
         'batch_size': 1024,
-        'epochs': 50,
+        'epochs': 5000,
         'train_set_ratio': 0.8,
         'in_channels': 3,
         'learning_rate': 1e-6,
