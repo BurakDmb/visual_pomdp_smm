@@ -8,21 +8,21 @@ import ray
 import torch
 import torch.multiprocessing as mp
 import torch.nn as nn
-from pomdp_tmaze_baselines.utils.AE import (Autoencoder, ConvAutoencoder,
-                                            ConvBinaryAutoencoder,
-                                            ConvVariationalAutoencoder,
-                                            VariationalAutoencoder)
 from ray import train
-from ray.air import Checkpoint, ScalingConfig, session
-from ray.air import RunConfig, CheckpointConfig, FailureConfig
-from ray.train.torch import TorchTrainer
-from torchvision import transforms
+from ray.air import (Checkpoint, CheckpointConfig, FailureConfig, RunConfig,
+                     ScalingConfig, session)
 from ray.data.preprocessors import TorchVisionPreprocessor
+from ray.train.torch import TorchTrainer
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
 from tqdm.auto import tqdm
 
 from visual_pomdp_smm.envs.minigrid.minigrid_utils import \
     MinigridGenericDataset
+from visual_pomdp_smm.training.AE import (Autoencoder, ConvAutoencoder,
+                                          ConvBinaryAutoencoder,
+                                          ConvVariationalAutoencoder,
+                                          VariationalAutoencoder)
 
 # torch.manual_seed(0)
 # torch.autograd.set_detect_anomaly(True)

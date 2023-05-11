@@ -1,11 +1,10 @@
-import torch
-import torchvision
-import matplotlib.pyplot as plt
 import os
 
+import matplotlib.pyplot as plt
+import torch
+import torchvision
 
-from pomdp_tmaze_baselines.utils.AE import Autoencoder, VariationalAutoencoder
-
+from visual_pomdp_smm.training.AE import Autoencoder, VariationalAutoencoder
 from visual_pomdp_smm.training.train_utils import train_ae, train_vae
 
 plt.rcParams['figure.dpi'] = 200
